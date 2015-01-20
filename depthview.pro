@@ -13,6 +13,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    videowidget.cpp \
+    cameradatafeed.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    videowidget.h \
+    cameradatafeed.h
