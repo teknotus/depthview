@@ -68,7 +68,6 @@ bool CameraDataFeed::openCamera(){
         QTextStream(stdout) << "camera already open" << endl;
         return false;
     }
-    QTextStream(stdout) << "Camera!" << endl;
     fd = open(device.toStdString().c_str(), O_NONBLOCK | O_RDWR); // Open non blocking becauce
     if (fd == -1)                                                 // getting frame from UI thread
     {
@@ -88,7 +87,6 @@ bool CameraDataFeed::setFormat(){
         QTextStream(stdout) << "cannot set format while buffers active" << endl;
         return false;
     }
-    QTextStream(stdout) << "FMT!" << endl;
     struct v4l2_format format;
     memset(&format, 0, sizeof(format));           // Clear struct
     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;    // Required
@@ -115,7 +113,6 @@ bool CameraDataFeed::reqBuffers(){
         QTextStream(stdout) << "REQBUF already done" << endl;
         return false;
     }
-    QTextStream(stdout) << "REQBUFS!" << endl;
     buffercount = 2; // Double buffer
 
     memset(&reqestBuffers, 0, sizeof(reqestBuffers));
@@ -368,7 +365,6 @@ void CameraDataFeed::startVideo(){
     openCamera();
     setFormat();
     reqBuffers();
-    printState();
     newBufArray();
     queryAllBuffers();
     mMAP();
@@ -383,7 +379,6 @@ void CameraDataFeed::stopVideo(){
     stopStream();
     freeMmap();
     freeBufferArray();
-    printState();
     freeBuffers();
     closeCamera();
     printState();
