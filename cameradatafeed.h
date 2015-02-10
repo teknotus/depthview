@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <linux/videodev2.h>
+#include <linux/uvcvideo.h>
+#include <linux/usb/video.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
@@ -27,6 +29,7 @@ class CameraDataFeed : public QObject
     QTimer *timer;
     void printState();
     bool openCamera();
+    bool getControls();
     bool setFormat();
     bool reqBuffers();
     bool freeBuffers();
@@ -60,6 +63,7 @@ class CameraDataFeed : public QObject
 
 public:
     explicit CameraDataFeed(QObject *parent = 0);
+    void setControl(int control, int value);
 
 signals:
     void newData(void *);
@@ -69,6 +73,11 @@ public slots:
     void startVideo();
     void stopVideo();
     void setCameraDevice(QString);
+    void setLaserPower(int);
+    void setIvcamSetting(int);
+    void setMrtoSetting(int);
+    void setFilterSetting(int);
+    void setConfidenceSetting(int);
 
 };
 

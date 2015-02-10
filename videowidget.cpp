@@ -4,6 +4,9 @@ VideoWidget::VideoWidget(QWidget *parent) :
     QWidget(parent)
 {
     setFixedSize(640, 480); // Only handle dimensions of Depth Camera.
+    min = 0;
+    max = 0xffff;
+    mask = 0xffff;
 }
 
 void VideoWidget::paintEvent(QPaintEvent *)
@@ -18,15 +21,30 @@ void VideoWidget::paintEvent(QPaintEvent *)
     painter.end();
 }
 void VideoWidget::updateImage(void * voidData){
-    uchar * data = (uchar *)voidData;
+//    uchar * data = (uchar *)voidData;
+    u_int16_t * data = (u_int16_t *)voidData;
     image = QImage( 640, 480, QImage::Format_ARGB32 );
     for(int i = 0 ; i < 640 ; i++){
         for(int j = 0 ; j < 480 ; j++){
-            uchar big = data[j*640*2 + i*2 + 1];
-            uchar small = data[j*640*2 + i*2];
-            QRgb pix = qRgb( small,255 - (big == 0 ? 255 : big), 0);
+            u_int16_t value = data[j*640 + i];
+            u_int16_t value2;
+            value2 = mask & (( value < min || value > max) ? 0 : value);
+//            uchar big = data[j*640*2 + i*2 + 1];
+//            uchar small = data[j*640*2 + i*2];
+            uchar big = (value2 >> 8) & 0xff;
+            uchar small = value2 & 0xff;
+            QRgb pix = qRgb( small,255 - (big == 0 ? 255 : big), ((value < min) && (value != 0)) ? 255 : 0);
             image.setPixel(i,j,pix);
         }
     }
     repaint();
+}
+void VideoWidget::setMin(int minimum){
+    min = (u_int16_t)minimum;
+}
+void VideoWidget::setMax(int maximum){
+    max = (u_int16_t)maximum;
+}
+void VideoWidget::setMask(int byteMask){
+    mask = (u_int16_t)byteMask;
 }
