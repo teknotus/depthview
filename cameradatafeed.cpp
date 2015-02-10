@@ -74,8 +74,150 @@ bool CameraDataFeed::openCamera(){
         perror("opening device");
         return false;
     }
+
     state = (State)(state | OPEN);
     return true;
+}
+
+bool CameraDataFeed::getControls(){
+    QTextStream cout(stdout);
+    cout << "getcontrols:" << endl;
+
+//    __u8 * data = (__u8 *)calloc(64,sizeof(__u8));
+    __u8 control = 1;
+    __u16 size = 0;
+    __u8 value = 0;
+    __u8 * data = (__u8 *)&value;
+    struct uvc_xu_control_query xquery;
+    memset(&xquery, 0, sizeof(xquery));
+    xquery.query = UVC_GET_LEN;
+    xquery.size = 2;
+    xquery.selector = control;
+    xquery.unit = 5;
+    xquery.data = (__u8 *)&size;
+
+    if(-1 == ioctl(fd,UVCIOC_CTRL_QUERY,&xquery)){
+        perror("UVC_GET_LEN");
+    }
+    cout << "UVC_GET_LEN:" << size << endl;
+
+//    memset(&xquery, 0, sizeof(xquery));
+    xquery.query = UVC_GET_MAX;
+    xquery.size = size;
+    xquery.selector = control;
+    xquery.unit = 5;
+    xquery.data = data;
+    if(-1 == ioctl(fd,UVCIOC_CTRL_QUERY,&xquery)){
+        perror("UVC_GET_MAX");
+    }
+    cout << "MAX:" << value << endl;
+
+//    memset(&xquery, 0, sizeof(xquery));
+    xquery.query = UVC_GET_MIN;
+    xquery.size = size;
+    xquery.selector = control;
+    xquery.unit = 5;
+    xquery.data = data;
+    if(-1 == ioctl(fd,UVCIOC_CTRL_QUERY,&xquery)){
+        perror("UVC_GET_MIN");
+    }
+    cout << "MIN:" << value << endl;
+
+    memset(&xquery, 0, sizeof(xquery));
+    xquery.query = UVC_GET_DEF;
+    xquery.size = size;
+    xquery.selector = control;
+    xquery.unit = 5;
+    xquery.data = data;
+    if(-1 == ioctl(fd,UVCIOC_CTRL_QUERY,&xquery)){
+        perror("UVC_GET_DEF");
+    }
+    cout << "Default:" << value << endl;
+
+    memset(&xquery, 0, sizeof(xquery));
+    xquery.query = UVC_GET_CUR;
+    xquery.size = size;
+    xquery.selector = control;
+    xquery.unit = 5;
+    xquery.data = data;
+    if(-1 == ioctl(fd,UVCIOC_CTRL_QUERY,&xquery)){
+        perror("UUVC_GET_CUR");
+    }
+    cout << "Current:" << value << endl;
+
+    value = 16;
+    memset(&xquery, 0, sizeof(xquery));
+    xquery.query = UVC_SET_CUR;
+    xquery.size = size;
+    xquery.selector = control;
+    xquery.unit = 5;
+    xquery.data = data;
+    if(-1 == ioctl(fd,UVCIOC_CTRL_QUERY,&xquery)){
+        perror("UVC_SET_CUR");
+    }
+    cout << "Set Current data0:" << data[0] << " data1:" << data[1] << endl;
+
+    memset(&xquery, 0, sizeof(xquery));
+    xquery.query = UVC_GET_CUR;
+    xquery.size = 1;
+    xquery.selector = 1;
+    xquery.unit = 5;
+    xquery.data = data;
+    if(-1 == ioctl(fd,UVCIOC_CTRL_QUERY,&xquery)){
+        perror("UVC_GET_CUR 2");
+    }
+    cout << "Current data0:" << data[0] << " data1:" << data[1] << endl;
+
+//UVC_GET_CUR
+    struct v4l2_queryctrl qctrl;
+    qctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
+    while (0 == ioctl (fd, VIDIOC_QUERYCTRL, &qctrl)) {
+        out << "id: " << qctrl.id << " name: " << (char *)qctrl.name << endl;
+        qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+    }
+
+    struct v4l2_query_ext_ctrl qext;
+    qext.id = V4L2_CTRL_FLAG_NEXT_CTRL;
+    while (0 == ioctl (fd, VIDIOC_QUERY_EXT_CTRL, &qext)) {
+        out << "id: " << qext.id << " name: " << (char *)qext.name << endl;
+        qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+    }
+    return true;
+}
+
+void CameraDataFeed::setControl(int control,int setting){
+    __u8 selector = (__u8)control;
+//    __u8 selector = 1;
+    __u8 unit = 5;
+    __u16 size = 1;
+    __u8 value = (__u8)setting;
+//    __u8 * data = (__u8 *)&value;
+    struct uvc_xu_control_query xquery;
+    memset(&xquery, 0, sizeof(xquery));
+    xquery.query = UVC_SET_CUR;
+    xquery.size = size;
+    xquery.selector = selector;
+    xquery.unit = unit;
+    xquery.data = (__u8 *)&value;
+
+    if(-1 == ioctl(fd,UVCIOC_CTRL_QUERY,&xquery)){
+        perror("UVC_SET_CUR");
+    }
+}
+void CameraDataFeed::setLaserPower(int value){
+    setControl(1,value);
+}
+void CameraDataFeed::setIvcamSetting(int value){
+    setControl(2,value);
+}
+void CameraDataFeed::setMrtoSetting(int value){
+    setControl(3,value);
+}
+void CameraDataFeed::setFilterSetting(int value){
+    setControl(5,value);
+}
+void CameraDataFeed::setConfidenceSetting(int value){
+    setControl(6,value);
 }
 
 bool CameraDataFeed::setFormat(){
@@ -363,6 +505,7 @@ bool CameraDataFeed::closeCamera(){
 }
 void CameraDataFeed::startVideo(){
     openCamera();
+    getControls();
     setFormat();
     reqBuffers();
     newBufArray();
