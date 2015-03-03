@@ -1,4 +1,4 @@
-# Linux Kernal patch
+# Linux Kernel patch
 
 Adds support for video pixel formats of intel real sense F200 camera.
 
@@ -73,11 +73,11 @@ File is in package linux-libc-dev if you want to get back original
 
     (cd drivers/media/usb/uvc/ && sudo make -C /usr/src/linux-headers-`uname -r` M=`pwd` modules_install)
 
-# test module
+# Test module
 
     sudo rmmod uvcvideo
     sudo insmod /lib/modules/`uname -r`/extra/uvcvideo.ko
 
-# install module
+# Install module
 
     sudo cp /lib/modules/`uname -r`/extra/uvcvideo.ko /lib/modules/`uname -r`/kernel/drivers/media/usb/uvc/uvcvideo.ko
