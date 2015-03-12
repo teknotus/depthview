@@ -244,7 +244,7 @@ bool CameraDataFeed::setFormat(){
             break;
         }
         *((__u32 *)pixfmt) = fmtdesc.pixelformat;
-        printf("index: %d flags: 0x%04x description: %s format: %s \n", i, fmtdesc.flags, fmtdesc.description, pixfmt/*fmtdesc.pixelformat */);
+        printf("index: %d format: %s description: %s \n", i, pixfmt /*fmtdesc.pixelformat */, fmtdesc.description);
         i++;
     }
     delete[] pixfmt;
