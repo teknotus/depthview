@@ -255,6 +255,7 @@ bool CameraDataFeed::setFormat(){
         perror("getting format");
         return false;
     }
+    format.fmt.pix.pixelformat = 0x49564e49;
     format.fmt.pix.width       = 640;             // Make sure it's the right size
     format.fmt.pix.height      = 480;
     if (-1 == ioctl(fd, VIDIOC_S_FMT, &format)){  // Set video format
