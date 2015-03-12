@@ -229,6 +229,25 @@ bool CameraDataFeed::setFormat(){
         QTextStream(stdout) << "cannot set format while buffers active" << endl;
         return false;
     }
+    struct v4l2_fmtdesc fmtdesc;
+    int i,e,r, trys;
+    i = e = r = 0;
+    __u8 * pixfmt = new __u8[5];
+    pixfmt[4] = 0;
+    trys = 255;
+    while(trys-- > 0){
+        memset(&fmtdesc, 0, sizeof(fmtdesc));
+        fmtdesc.index = i;
+        fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        if (-1 == ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc)){  // Get video format
+            perror("enum fmt");
+            break;
+        }
+        *((__u32 *)pixfmt) = fmtdesc.pixelformat;
+        printf("index: %d flags: 0x%04x description: %s format: %s \n", i, fmtdesc.flags, fmtdesc.description, pixfmt/*fmtdesc.pixelformat */);
+        i++;
+    }
+    delete[] pixfmt;
     struct v4l2_format format;
     memset(&format, 0, sizeof(format));           // Clear struct
     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;    // Required
