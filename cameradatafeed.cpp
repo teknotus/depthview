@@ -176,12 +176,12 @@ bool CameraDataFeed::getControls(){
         qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
     }
 
-    struct v4l2_query_ext_ctrl qext;
-    qext.id = V4L2_CTRL_FLAG_NEXT_CTRL;
-    while (0 == ioctl (fd, VIDIOC_QUERY_EXT_CTRL, &qext)) {
-        out << "id: " << qext.id << " name: " << (char *)qext.name << endl;
-        qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
-    }
+//    struct v4l2_query_ext_ctrl qext;
+//    qext.id = V4L2_CTRL_FLAG_NEXT_CTRL;
+//    while (0 == ioctl (fd, VIDIOC_QUERY_EXT_CTRL, &qext)) {
+//        out << "id: " << qext.id << " name: " << (char *)qext.name << endl;
+//        qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+//    }
     return true;
 }
 
