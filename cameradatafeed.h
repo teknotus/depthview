@@ -14,6 +14,7 @@
 #include <QTimer>
 #include <QString>
 #include <unistd.h>
+#include <QImage>
 //using std::string;
 
 class CameraDataFeed : public QObject
@@ -23,6 +24,12 @@ class CameraDataFeed : public QObject
     QTextStream out;
     QString device;
     int fd;
+    QImage depthImage;
+    QImage infraredImage;
+    u_int16_t depthMin;
+    u_int16_t depthMax;
+    u_int16_t depthMask;
+    struct v4l2_format v4l2Format;
     __u32 buffercount;
     v4l2_buffer * buffers;
     struct v4l2_requestbuffers reqestBuffers;
@@ -44,6 +51,7 @@ class CameraDataFeed : public QObject
     bool closeCamera();
     bool freeMmap();
     bool freeBufferArray();
+    void createImages(void * voidData);
     enum State {
         OPEN =           (1u << 0),
         FMT =            (1u << 1),
@@ -66,7 +74,9 @@ public:
     void setControl(int control, int value);
 
 signals:
-    void newData(void *);
+//    void newData(void *);
+    void newDepthImage(QImage);
+    void newInfraredImage(QImage);
 
 public slots:
     void updateData();
@@ -78,7 +88,9 @@ public slots:
     void setMrtoSetting(int);
     void setFilterSetting(int);
     void setConfidenceSetting(int);
-
+    void setDepthMin(int);
+    void setDepthMax(int);
+    void setDepthMask(int);
 };
 
 #endif // CAMERADATAFEED_H

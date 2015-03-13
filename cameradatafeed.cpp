@@ -5,9 +5,10 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
 {
     state = (State)0;
     fd = -1;
-    QTextStream out(stdout);
-    out << "device: " << device << endl;
-    QTextStream(stdout) << "fd: " << fd << endl;
+    memset(&v4l2Format,0,sizeof(v4l2_format));
+    depthMin = 0;
+    depthMax = 0xffff;
+    depthMask = 0xffff;
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(updateData()));
     printState();
@@ -244,7 +245,8 @@ bool CameraDataFeed::setFormat(){
             break;
         }
         *((__u32 *)pixfmt) = fmtdesc.pixelformat;
-        printf("index: %d format: %s description: %s \n", i, pixfmt /*fmtdesc.pixelformat */, fmtdesc.description);
+        printf("index: %d format: %s description: %s \n",
+               i, pixfmt /*fmtdesc.pixelformat */, fmtdesc.description);
         i++;
     }
     delete[] pixfmt;
@@ -255,13 +257,16 @@ bool CameraDataFeed::setFormat(){
         perror("getting format");
         return false;
     }
-    format.fmt.pix.pixelformat = 0x49564e49;
+//    format.fmt.pix.pixelformat = 0x49564e49;      // INVI
+    format.fmt.pix.pixelformat = 0x495a4e49;      // INZI
+
     format.fmt.pix.width       = 640;             // Make sure it's the right size
     format.fmt.pix.height      = 480;
     if (-1 == ioctl(fd, VIDIOC_S_FMT, &format)){  // Set video format
         perror("setting format");
         return false;
     }
+    v4l2Format = format;
     state = (State)(state | FMT);
     return true;
 }
@@ -562,6 +567,8 @@ void CameraDataFeed::updateData()
     if (-1 == ioctl(fd, VIDIOC_DQBUF, &dqbuf)) {
        if(errno == EAGAIN){
            // frame not ready yet
+       } else if(errno == ENODEV){
+           stopClock();
        } else {
            perror("readbuf");
            QTextStream(stdout) << "err!" << endl;
@@ -571,12 +578,61 @@ void CameraDataFeed::updateData()
         // Structure has index that can be used to look up pointer
         void * data = (void *)buffers[dqbuf.index].m.userptr;
         // Do something with data
-        emit newData(data);
+//        emit newData(data);
+        createImages(data);
 
         // tell driver it can reuse framebuffer
         ioctl(fd, VIDIOC_QBUF, &dqbuf);
         // signal repaint();
     }
+}
+
+void CameraDataFeed::createImages(void * voidData){
+    //    uchar * data = (uchar *)voidData;
+    //    u_int16_t * data = (u_int16_t *)voidData;
+    u_int8_t * data = (u_int8_t *)voidData;
+    QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
+    QImage irImage = QImage( 640, 480, QImage::Format_ARGB32 );
+    for(int i = 0 ; i < 640 ; i++){
+        for(int j = 0 ; j < 480 ; j++){
+
+            u_int16_t depth = *(u_int16_t *)(data + j*640*3 + i*3);
+            u_int8_t ir = data[j*640*3 + i*3 + 2];
+
+            /* out of bounds depth become zero */
+            u_int16_t depthFiltered = depthMask &
+                    (( depth < depthMin || depth > depthMax) ? 0 : depth);
+
+            u_int8_t high = (depthFiltered >> 8) & 0xff;
+            u_int8_t low = depthFiltered & 0xff;
+
+            QRgb dPix = qRgb(low,
+                             /* invert green unless value is zero */
+                             255 - (high == 0 ? 255 : high),
+                             /* depth below min become blue */
+                             ((depth < depthMin) && (depth != 0)) ? 255 : 0);
+            QRgb irPix = qRgb(ir, ir, ir);
+
+            dImage.setPixel(i,j,dPix);
+            irImage.setPixel(i,j,irPix);
+        }
+    }
+    depthImage = dImage;
+    infraredImage = irImage;
+    emit newDepthImage(depthImage);
+    emit newInfraredImage(infraredImage);
+}
+void CameraDataFeed::setDepthMin(int minimum){
+    QTextStream(stdout) << "set depth min: " << minimum << endl;
+    depthMin = (u_int16_t)minimum;
+}
+void CameraDataFeed::setDepthMax(int maximum){
+    QTextStream(stdout) << "set depth max: " << maximum << endl;
+    depthMax = (u_int16_t)maximum;
+}
+void CameraDataFeed::setDepthMask(int byteMask){
+    QTextStream(stdout) << "set depth mask" << endl;
+    depthMask = (u_int16_t)byteMask;
 }
 
 void CameraDataFeed::setCameraDevice(QString dev){

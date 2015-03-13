@@ -13,6 +13,7 @@
 #include <QRadioButton>
 #include <cameradatafeed.h>
 #include <videowidget.h>
+#include <controlswidget.h>
 
 class MainWindow : public QMainWindow
 {
@@ -25,33 +26,15 @@ public:
     QHBoxLayout *devicePickLayout;
     QHBoxLayout *buttonLayout;
     QWidget *centerWidget;
-    VideoWidget *vid;
+    VideoWidget *depthVid;
+    VideoWidget *irVid;
     CameraDataFeed *camera;
+    ControlsWidget *controlsWidget;
     QLabel *deviceLabel;
     QLineEdit *devicePathEdit;
     QPushButton *startButton;
     QPushButton *stopButton;
     QSettings * settings;
-
-    QHBoxLayout * laserLayout;
-    QLabel * laserLabel;
-    QSlider * laserPower;
-
-    QHBoxLayout * ivcamLayout;
-    QLabel * ivcamLabel;
-    QSlider * ivcamSetting;
-
-    QHBoxLayout * mrtoLayout;
-    QLabel * mrtoLabel;
-    QSlider * mrtoSetting;
-
-    QHBoxLayout * filterLayout;
-    QLabel * filterLabel;
-    QSlider * filterSetting;
-
-    QHBoxLayout * confidenceLayout;
-    QLabel * confidenceLabel;
-    QSlider * confidenceSetting;
 
     QHBoxLayout * maxLayout;
     QLabel * maxLabel;
@@ -73,9 +56,7 @@ public:
     QPushButton * infoButton;
 
 public slots:
-    void setDefaults();
-    void setAccuracy();
-    void setInfo();
+
 };
 
 #endif // MAINWINDOW_H
