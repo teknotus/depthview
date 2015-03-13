@@ -18,9 +18,11 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     videowidget.cpp \
     cameradatafeed.cpp \
-    cameracontrol.cpp
+    cameracontrol.cpp \
+    controlswidget.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
     cameradatafeed.h \
-    cameracontrol.h
+    cameracontrol.h \
+    controlswidget.h
