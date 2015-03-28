@@ -266,7 +266,8 @@ bool CameraDataFeed::setFormat(){
         return false;
     }
 //    format.fmt.pix.pixelformat = 0x49564e49;      // INVI
-    format.fmt.pix.pixelformat = 0x495a4e49;      // INZI
+//    format.fmt.pix.pixelformat = 0x495a4e49;      // INZI
+    format.fmt.pix.pixelformat = 0x49524e49;      // INRI
 
     format.fmt.pix.width       = 640;             // Make sure it's the right size
     format.fmt.pix.height      = 480;
@@ -629,11 +630,16 @@ void CameraDataFeed::createImages(void * voidData){
     u_int8_t * data = (u_int8_t *)voidData;
     QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
     QImage irImage = QImage( 640, 480, QImage::Format_ARGB32 );
-    for(int i = 0 ; i < 640 ; i++){
-        for(int j = 0 ; j < 480 ; j++){
+    for(int j = 0 ; j < 480 ; j++){
+        int step24 = 640*3*j;
+        int step16 = 640*2*j;
+        for(int i = 0 ; i < 640 ; i++){
+//            int stride24 = 3*i;
+            int pixel24 = step24 + 3*i;
+            int pixel16 = step16 + 2*i;
 
-            u_int16_t depth = *(u_int16_t *)(data + j*640*3 + i*3);
-            u_int8_t ir = data[j*640*3 + i*3 + 2];
+            u_int16_t depth = *(u_int16_t *)(data + pixel24);
+            u_int8_t ir = data[pixel24 + 2];
 
             /* out of bounds depth become zero */
             u_int16_t depthFiltered = depthMask &
@@ -652,8 +658,12 @@ void CameraDataFeed::createImages(void * voidData){
             dImage.setPixel(i,j,dPix);
             irImage.setPixel(i,j,irPix);
             ir_image->data[640*j +i] = ir;
-            depth_image->data[640*2*j + i*2] = data[j*640*3 +i*3 +1];
-            depth_image->data[640*2*j + i*2 + 1] = data[j*640*3 +i*3 +2];
+//            depth_image->data[pixel16] = data[pixel24];
+//            depth_image->data[pixel16 + 1] = data[pixel24 +1];
+            depth_image->data[pixel16] = low;
+            depth_image->data[pixel16 + 1] = high;
+
+
         }
     }
     depthImage = dImage;
