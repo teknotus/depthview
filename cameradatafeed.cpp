@@ -14,8 +14,8 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(updateData()));
     printState();
-    std::string ir_url = "file:///home/teknotus/ros_catkin_ws/cam.yaml";
-    std::string depth_url = "file:///home/teknotus/ros_catkin_ws/cam.yaml";
+    std::string ir_url = "package://depthview/${NAME}.ini";
+    std::string depth_url = "package://depthview/${NAME}.ini";
     ir_cim.loadCameraInfo(ir_url);
     ir_pub = ir_it.advertiseCamera("image_raw",1);
     depth_cim.loadCameraInfo(depth_url);
