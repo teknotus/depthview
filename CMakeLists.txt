@@ -10,6 +10,9 @@ set(CMAKE_AUTOMOC ON)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   camera_info_manager
+  std_msgs
+  sensor_msgs
+  roscpp
   image_transport
 )
 
@@ -85,7 +88,12 @@ find_package(Qt5Widgets)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES depthview
-#  CATKIN_DEPENDS camera_info_manager image_transport
+  CATKIN_DEPENDS
+    camera_info_manager
+    std_msgs
+    roscpp
+    image_transport
+    sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -118,7 +126,7 @@ add_executable(depthview main.cpp cameracontrol.cpp controlswidget.cpp
 # target_link_libraries(depthview_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(depthview Qt5::Widgets)
+target_link_libraries(depthview Qt5::Widgets ${catkin_LIBRARIES})
 
 #############
 ## Install ##

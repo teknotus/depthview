@@ -1,7 +1,9 @@
 #include "cameradatafeed.h"
 
 CameraDataFeed::CameraDataFeed(QObject *parent) :
-    QObject(parent)
+    QObject(parent), nh("camera"),
+    ir_nh(nh,"ir"),      ir_cim(ir_nh),       ir_it(ir_nh),
+    depth_nh(nh,"depth"),depth_cim(depth_nh), depth_it(depth_nh)
 {
     state = (State)0;
     fd = -1;
@@ -12,6 +14,12 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(updateData()));
     printState();
+    std::string ir_url = "file:///home/teknotus/ros_catkin_ws/cam.yaml";
+    std::string depth_url = "file:///home/teknotus/ros_catkin_ws/cam.yaml";
+    ir_cim.loadCameraInfo(ir_url);
+    ir_pub = ir_it.advertiseCamera("image_raw",1);
+    depth_cim.loadCameraInfo(depth_url);
+    depth_pub = depth_it.advertiseCamera("image_raw",1);
 }
 CameraDataFeed::~CameraDataFeed(){
     delete timer;
@@ -590,6 +598,34 @@ void CameraDataFeed::updateData()
 void CameraDataFeed::createImages(void * voidData){
     //    uchar * data = (uchar *)voidData;
     //    u_int16_t * data = (u_int16_t *)voidData;
+    ros::Time tn = ros::Time::now();
+
+    std::string ir_id("infrared");
+    sensor_msgs::Image::Ptr ir_image(new sensor_msgs::Image());
+    ir_image->header.stamp = tn;
+    ir_image->header.frame_id = ir_id;
+    ir_image->width  = 640;
+    ir_image->height = 480;
+    ir_image->encoding = sensor_msgs::image_encodings::MONO8;
+    ir_image->step = 640;
+    ir_image->data.resize(640*480);
+    sensor_msgs::CameraInfo::Ptr ir_info(new sensor_msgs::CameraInfo(ir_cim.getCameraInfo()));
+    ir_info->header.stamp = tn;
+    ir_info->header.frame_id = ir_id;
+
+    std::string depth_id("depth");
+    sensor_msgs::Image::Ptr depth_image(new sensor_msgs::Image());
+    depth_image->header.stamp = tn;
+    depth_image->header.frame_id = depth_id;
+    depth_image->width  = 640;
+    depth_image->height = 480;
+    depth_image->encoding = sensor_msgs::image_encodings::TYPE_16UC1;
+    depth_image->step = 640*2;
+    depth_image->data.resize(640*480*2);
+    sensor_msgs::CameraInfo::Ptr depth_info(new sensor_msgs::CameraInfo(depth_cim.getCameraInfo()));
+    depth_info->header.stamp = tn;
+    depth_info->header.frame_id = ir_id;
+
     u_int8_t * data = (u_int8_t *)voidData;
     QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
     QImage irImage = QImage( 640, 480, QImage::Format_ARGB32 );
@@ -615,12 +651,18 @@ void CameraDataFeed::createImages(void * voidData){
 
             dImage.setPixel(i,j,dPix);
             irImage.setPixel(i,j,irPix);
+            ir_image->data[640*j +i] = ir;
+            depth_image->data[640*2*j + i*2] = data[j*640*3 +i*3 +1];
+            depth_image->data[640*2*j + i*2 + 1] = data[j*640*3 +i*3 +2];
         }
     }
     depthImage = dImage;
     infraredImage = irImage;
     emit newDepthImage(depthImage);
     emit newInfraredImage(infraredImage);
+    ir_pub.publish(ir_image,ir_info);
+    depth_pub.publish(depth_image,depth_info);
+    ros::spinOnce();
 }
 void CameraDataFeed::setDepthMin(int minimum){
     QTextStream(stdout) << "set depth min: " << minimum << endl;

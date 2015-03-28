@@ -15,6 +15,14 @@
 #include <QString>
 #include <unistd.h>
 #include <QImage>
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
+#include <std_msgs/String.h>
+#include <camera_info_manager/camera_info_manager.h>
+#include <image_transport/image_transport.h>
+#include <image_transport/camera_publisher.h>
+
 //using std::string;
 
 class CameraDataFeed : public QObject
@@ -68,6 +76,10 @@ class CameraDataFeed : public QObject
 //        "MMAP", "QBUF", "STREAM", "TIMER"
 //    };
     State state;
+    ros::NodeHandle nh,ir_nh,depth_nh;
+    camera_info_manager::CameraInfoManager ir_cim,depth_cim;
+    image_transport::ImageTransport ir_it,depth_it;
+    image_transport::CameraPublisher ir_pub,depth_pub;
 
 public:
     explicit CameraDataFeed(QObject *parent = 0);
