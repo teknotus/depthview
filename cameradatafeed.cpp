@@ -266,8 +266,8 @@ bool CameraDataFeed::setFormat(){
         return false;
     }
 //    format.fmt.pix.pixelformat = 0x49564e49;      // INVI
-//    format.fmt.pix.pixelformat = 0x495a4e49;      // INZI
-    format.fmt.pix.pixelformat = 0x49524e49;      // INRI
+    format.fmt.pix.pixelformat = 0x495a4e49;      // INZI
+//    format.fmt.pix.pixelformat = 0x49524e49;      // INRI
 
     format.fmt.pix.width       = 640;             // Make sure it's the right size
     format.fmt.pix.height      = 480;
