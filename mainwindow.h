@@ -36,6 +36,11 @@ public:
     QPushButton *stopButton;
     QSettings * settings;
 
+    QHBoxLayout *snapshotLayout;
+    QPushButton *snapshotButton;
+    QLabel *snapshotDirEditLabel;
+    QLineEdit *snapshotDirEdit;
+
     QHBoxLayout * maxLayout;
     QLabel * maxLabel;
     QSlider * maxSetting;

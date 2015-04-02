@@ -15,7 +15,12 @@
 #include <QString>
 #include <unistd.h>
 #include <QImage>
+#include <QDateTime>
+#include <opencv2/opencv.hpp>
 //using std::string;
+
+using namespace std;
+using namespace cv;
 
 class CameraDataFeed : public QObject
 {
@@ -23,9 +28,12 @@ class CameraDataFeed : public QObject
     ~CameraDataFeed();
     QTextStream out;
     QString device;
+    QString fifo_filename;
     int fd;
+    int fifo_fd;
     QImage depthImage;
     QImage infraredImage;
+    bool takeSnap;
     u_int16_t depthMin;
     u_int16_t depthMax;
     u_int16_t depthMask;
@@ -36,6 +44,7 @@ class CameraDataFeed : public QObject
     QTimer *timer;
     void printState();
     bool openCamera();
+    void openFifo();
     bool getControls();
     bool setFormat();
     bool reqBuffers();

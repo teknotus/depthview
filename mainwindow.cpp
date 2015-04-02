@@ -15,12 +15,23 @@ MainWindow::MainWindow(QWidget *parent)
     controlsWidget->setCamera(camera);
     controlsWidget->setWindowTitle("Video Controls");
     controlsWidget->show();
+
     devicePickLayout = new QHBoxLayout();
     deviceLabel = new QLabel("Device");
     devicePathEdit = new QLineEdit();
     deviceLabel->setBuddy(devicePathEdit);
     devicePickLayout->addWidget(deviceLabel);
     devicePickLayout->addWidget(devicePathEdit);
+
+    snapshotLayout = new QHBoxLayout();
+    snapshotDirEditLabel = new QLabel("Snapshot Directory (/tmp)");
+    snapshotDirEdit = new QLineEdit();
+    snapshotDirEditLabel->setBuddy(snapshotDirEdit);
+    snapshotButton = new QPushButton("save picure");
+    snapshotLayout->addWidget(snapshotDirEditLabel);
+    snapshotLayout->addWidget(snapshotDirEdit);
+    snapshotLayout->addWidget(snapshotButton);
+
     buttonLayout = new QHBoxLayout();
     startButton = new QPushButton("start");
     stopButton = new QPushButton("stop");
@@ -67,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addLayout(minLayout);
     mainLayout->addLayout(maxLayout);
     mainLayout->addLayout(byteLayout);
+    mainLayout->addLayout(snapshotLayout);
 
     mainLayout->addLayout((devicePickLayout));
     mainLayout->addLayout(buttonLayout);
