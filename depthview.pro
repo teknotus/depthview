@@ -14,6 +14,8 @@ TEMPLATE = app
 #INCLUDEPATH += /usr/src/linux-headers-3.17.1-031701/include/ \
 #               /usr/src/linux-headers-3.17.1-031701/arch/x86/include/
 
+LIBS += `pkg-config opencv --libs`
+
 SOURCES += main.cpp\
         mainwindow.cpp \
     videowidget.cpp \

@@ -5,6 +5,9 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
 {
     state = (State)0;
     fd = -1;
+    fifo_fd = -1;
+    fifo_filename = QString("/tmp/depthview/fifo");
+    takeSnap = false;
     memset(&v4l2Format,0,sizeof(v4l2_format));
     depthMin = 0;
     depthMax = 0xffff;
@@ -61,7 +64,6 @@ void CameraDataFeed::printState(){
     out << endl;
 }
 
-
 bool CameraDataFeed::openCamera(){
     QTextStream(stdout) << "Camera" << endl;
     if(state & OPEN)
@@ -78,6 +80,17 @@ bool CameraDataFeed::openCamera(){
 
     state = (State)(state | OPEN);
     return true;
+}
+
+void CameraDataFeed::openFifo(){
+    QTextStream(stdout) << "FIFO" << endl;
+    fifo_fd = open(fifo_filename.toStdString().c_str(), O_NONBLOCK | O_RDWR);
+    if (fifo_fd == -1)
+    {
+        perror("opening device");
+        return;
+    }
+    return;
 }
 
 bool CameraDataFeed::getControls(){
@@ -530,6 +543,7 @@ bool CameraDataFeed::closeCamera(){
 }
 void CameraDataFeed::startVideo(){
     openCamera();
+    openFifo();
     getControls();
     setFormat();
     reqBuffers();
@@ -557,6 +571,16 @@ void CameraDataFeed::updateData()
     uint dMask = OPEN | STREAM;
     if((state & dMask) != dMask){
         return;
+    }
+    char command;
+    if (-1 == read(fifo_fd,&command,1)){
+        if(errno == EAGAIN){
+            /* no command */
+        } else if(errno == ENODEV){
+            /* no fifo */
+        }
+    } else {
+        takeSnap = true;
     }
     struct v4l2_buffer dqbuf;
     memset(&dqbuf, 0, sizeof(dqbuf));
@@ -593,10 +617,13 @@ void CameraDataFeed::createImages(void * voidData){
     u_int8_t * data = (u_int8_t *)voidData;
     QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
     QImage irImage = QImage( 640, 480, QImage::Format_ARGB32 );
+    Mat depth_cv(480,640, CV_16U);
+
     for(int i = 0 ; i < 640 ; i++){
         for(int j = 0 ; j < 480 ; j++){
 
             u_int16_t depth = *(u_int16_t *)(data + j*640*3 + i*3);
+            depth = int(depth/31.25 + 0.5); // convert to mm
             u_int8_t ir = data[j*640*3 + i*3 + 2];
 
             /* out of bounds depth become zero */
@@ -605,6 +632,10 @@ void CameraDataFeed::createImages(void * voidData){
 
             u_int8_t high = (depthFiltered >> 8) & 0xff;
             u_int8_t low = depthFiltered & 0xff;
+            Vec2b depthpix_cv;
+            depthpix_cv[0] = low;
+            depthpix_cv[1] = high;
+            depth_cv.at<cv::Vec2b>(j,i) = depthpix_cv;
 
             QRgb dPix = qRgb(low,
                              /* invert green unless value is zero */
@@ -621,6 +652,23 @@ void CameraDataFeed::createImages(void * voidData){
     infraredImage = irImage;
     emit newDepthImage(depthImage);
     emit newInfraredImage(infraredImage);
+    if(takeSnap){
+        QDateTime local(QDateTime::currentDateTime());
+        int timestamp = (int)local.toUTC().toTime_t();
+        QString depth_filename = QString("/tmp/depthview/depth/")
+                + QString::number(timestamp) + local.toString("zzz") + QString(".png");
+        QTextStream(stdout) << depth_filename;
+        vector<int> png_settings;
+        png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
+        png_settings.push_back(0);
+        try {
+            imwrite(depth_filename.toStdString(), depth_cv, png_settings);
+        } catch (cv::Exception& error) {
+            QTextStream(stderr) << "error writing image" << error.what() << endl;
+        }
+        takeSnap = false;
+    }
+//    delete depth_cv;
 }
 void CameraDataFeed::setDepthMin(int minimum){
     QTextStream(stdout) << "set depth min: " << minimum << endl;
