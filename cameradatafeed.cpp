@@ -612,26 +612,28 @@ void CameraDataFeed::updateData()
 }
 
 void CameraDataFeed::createImages(void * voidData){
-    //    uchar * data = (uchar *)voidData;
-    //    u_int16_t * data = (u_int16_t *)voidData;
     u_int8_t * data = (u_int8_t *)voidData;
     QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
     QImage irImage = QImage( 640, 480, QImage::Format_ARGB32 );
     Mat depth_cv(480,640, CV_16U);
 
-    for(int i = 0 ; i < 640 ; i++){
-        for(int j = 0 ; j < 480 ; j++){
+    for(int j = 0 ; j < 480 ; j++){
+        int step24 = 640*3*j;
+        int step16 = 640*2*j;
+        for(int i = 0 ; i < 640 ; i++){
+            int pixel24 = step24 + 3*i;
+            int pixel16 = step16 + 2*i;
 
-            u_int16_t depth = *(u_int16_t *)(data + j*640*3 + i*3);
+            u_int16_t depth = *(u_int16_t *)(data + pixel24);
+            u_int8_t ir = data[pixel24 + 2];
             depth = int(depth/31.25 + 0.5); // convert to mm
-            u_int8_t ir = data[j*640*3 + i*3 + 2];
 
             /* out of bounds depth become zero */
             u_int16_t depthFiltered = depthMask &
                     (( depth < depthMin || depth > depthMax) ? 0 : depth);
 
-            u_int8_t high = (depthFiltered >> 8) & 0xff;
-            u_int8_t low = depthFiltered & 0xff;
+            u_int8_t low = (depthFiltered >> 8) & 0xff;
+            u_int8_t high = depthFiltered & 0xff;
             Vec2b depthpix_cv;
             depthpix_cv[0] = low;
             depthpix_cv[1] = high;
