@@ -23,15 +23,19 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
     QVBoxLayout *mainLayout;
-    QHBoxLayout *devicePickLayout;
+    QVBoxLayout *devicePickLayout;
+    QHBoxLayout *colorDevicePickLayout;
+    QHBoxLayout *depthDevicePickLayout;
     QHBoxLayout *buttonLayout;
     QWidget *centerWidget;
     VideoWidget *depthVid;
     VideoWidget *irVid;
     CameraDataFeed *camera;
     ControlsWidget *controlsWidget;
-    QLabel *deviceLabel;
-    QLineEdit *devicePathEdit;
+    QLabel *colorDeviceLabel;
+    QLineEdit *colorDevicePathEdit;
+    QLabel *depthDeviceLabel;
+    QLineEdit *depthDevicePathEdit;
     QPushButton *startButton;
     QPushButton *stopButton;
     QSettings * settings;
@@ -40,6 +44,10 @@ public:
     QPushButton *snapshotButton;
     QLabel *snapshotDirEditLabel;
     QLineEdit *snapshotDirEdit;
+
+    QHBoxLayout *fifoRemoteLayout;
+    QLabel *fifoRemoteFilenameLabel;
+    QLineEdit *fifoRemoteFilenameEdit;
 
     QHBoxLayout * maxLayout;
     QLabel * maxLabel;
