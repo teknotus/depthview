@@ -6,7 +6,7 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
     state = (State)0;
     fd = -1;
     fifo_fd = -1;
-    fifo_filename = QString("/tmp/depthview/fifo");
+//    fifo_filename = QString("/tmp/depthview/fifo");
     takeSnap = false;
     memset(&v4l2Format,0,sizeof(v4l2_format));
     depthMin = 0;
@@ -657,7 +657,7 @@ void CameraDataFeed::createImages(void * voidData){
     if(takeSnap){
         QDateTime local(QDateTime::currentDateTime());
         int timestamp = (int)local.toUTC().toTime_t();
-        QString depth_filename = QString("/tmp/depthview/depth/")
+        QString depth_filename = snapshotDir //QString("/tmp/depthview/depth/")
                 + QString::number(timestamp) + local.toString("zzz") + QString(".png");
         QTextStream(stdout) << depth_filename;
         vector<int> png_settings;
@@ -683,6 +683,16 @@ void CameraDataFeed::setDepthMax(int maximum){
 void CameraDataFeed::setDepthMask(int byteMask){
     QTextStream(stdout) << "set depth mask" << endl;
     depthMask = (u_int16_t)byteMask;
+}
+
+void CameraDataFeed::savePicture(){
+    takeSnap = true;
+}
+void CameraDataFeed::setFifoFilename(QString filename){
+    fifo_filename = filename;
+}
+void CameraDataFeed::setSnapshotDir(QString dir){
+    snapshotDir = dir;
 }
 
 void CameraDataFeed::setCameraDevice(QString dev){
