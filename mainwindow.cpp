@@ -112,15 +112,31 @@ MainWindow::MainWindow(QWidget *parent)
     connect(minSetting,SIGNAL(valueChanged(int)),camera,SLOT(setDepthMin(int)));
     connect(maxSetting,SIGNAL(valueChanged(int)),camera,SLOT(setDepthMax(int)));
     connect(byteGroup,SIGNAL(buttonClicked(int)),camera,SLOT(setDepthMask(int)));
+    connect(snapshotButton,SIGNAL(clicked()),camera,SLOT(savePicture()));
+    connect(snapshotDirEdit,SIGNAL(textChanged(QString)),camera,SLOT(setSnapshotDir(QString)));
+    connect(fifoRemoteFilenameEdit,SIGNAL(textChanged(QString)),
+            camera,SLOT(setFifoFilename(QString)));
 
     settings = new QSettings("solsticlipse", "depthview");
+    if(settings->contains("colorCameraDevice")){
+        colorDevicePathEdit->setText(settings->value("colorCameraDevice").toString());
+    }
     if(settings->contains("depthCameraDevice")){
         depthDevicePathEdit->setText(settings->value("depthCameraDevice").toString());
+    }
+    if(settings->contains("snapshotDirectory")){
+        snapshotDirEdit->setText(settings->value("snapshotDirectory").toString());
+    }
+    if(settings->contains("fifoRemoteFilename")){
+        fifoRemoteFilenameEdit->setText(settings->value("fifoRemoteFilename").toString());
     }
 }
 
 MainWindow::~MainWindow()
 {
+    settings->setValue("colorCameraDevice",colorDevicePathEdit->text());
     settings->setValue("depthCameraDevice",depthDevicePathEdit->text());
+    settings->setValue("snapshotDirectory",snapshotDirEdit->text());
+    settings->setValue("fifoRemoteFilename",fifoRemoteFilenameEdit->text());
     delete settings;
 }
