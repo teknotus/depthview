@@ -632,11 +632,11 @@ void CameraDataFeed::createImages(void * voidData){
             u_int16_t depthFiltered = depthMask &
                     (( depth < depthMin || depth > depthMax) ? 0 : depth);
 
-            u_int8_t low = (depthFiltered >> 8) & 0xff;
-            u_int8_t high = depthFiltered & 0xff;
+            u_int8_t high = (depthFiltered >> 8) & 0xff;
+            u_int8_t low = depthFiltered & 0xff;
             Vec2b depthpix_cv;
-            depthpix_cv[0] = low;
-            depthpix_cv[1] = high;
+            depthpix_cv[0] = high;
+            depthpix_cv[1] = low;
             depth_cv.at<cv::Vec2b>(j,i) = depthpix_cv;
 
             QRgb dPix = qRgb(low,
