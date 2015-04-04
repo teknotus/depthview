@@ -16,21 +16,38 @@ MainWindow::MainWindow(QWidget *parent)
     controlsWidget->setWindowTitle("Video Controls");
     controlsWidget->show();
 
-    devicePickLayout = new QHBoxLayout();
-    deviceLabel = new QLabel("Device");
-    devicePathEdit = new QLineEdit();
-    deviceLabel->setBuddy(devicePathEdit);
-    devicePickLayout->addWidget(deviceLabel);
-    devicePickLayout->addWidget(devicePathEdit);
+    devicePickLayout = new QVBoxLayout();
+    colorDevicePickLayout = new QHBoxLayout();
+    colorDeviceLabel = new QLabel("Color Device");
+    colorDevicePathEdit = new QLineEdit();
+    colorDeviceLabel->setBuddy(colorDevicePathEdit);
+    colorDevicePickLayout->addWidget(colorDeviceLabel);
+    colorDevicePickLayout->addWidget(colorDevicePathEdit);
+
+    depthDevicePickLayout = new QHBoxLayout();
+    depthDeviceLabel = new QLabel("Depth Device");
+    depthDevicePathEdit = new QLineEdit();
+    depthDeviceLabel->setBuddy(depthDevicePathEdit);
+    depthDevicePickLayout->addWidget(depthDeviceLabel);
+    depthDevicePickLayout->addWidget(depthDevicePathEdit);
+    devicePickLayout->addLayout(colorDevicePickLayout);
+    devicePickLayout->addLayout(depthDevicePickLayout);
 
     snapshotLayout = new QHBoxLayout();
-    snapshotDirEditLabel = new QLabel("Snapshot Directory (/tmp)");
+    snapshotDirEditLabel = new QLabel("Snapshot Directory (/tmp/depthview)");
     snapshotDirEdit = new QLineEdit();
     snapshotDirEditLabel->setBuddy(snapshotDirEdit);
     snapshotButton = new QPushButton("save picure");
     snapshotLayout->addWidget(snapshotDirEditLabel);
     snapshotLayout->addWidget(snapshotDirEdit);
     snapshotLayout->addWidget(snapshotButton);
+
+    fifoRemoteLayout = new QHBoxLayout();
+    fifoRemoteFilenameLabel = new QLabel("fifo trigger filename (/tmp/depthview/fifo)");
+    fifoRemoteFilenameEdit = new QLineEdit();
+    fifoRemoteFilenameLabel->setBuddy(fifoRemoteFilenameEdit);
+    fifoRemoteLayout->addWidget(fifoRemoteFilenameLabel);
+    fifoRemoteLayout->addWidget(fifoRemoteFilenameEdit);
 
     buttonLayout = new QHBoxLayout();
     startButton = new QPushButton("start");
@@ -79,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addLayout(maxLayout);
     mainLayout->addLayout(byteLayout);
     mainLayout->addLayout(snapshotLayout);
+    mainLayout->addLayout(fifoRemoteLayout);
 
     mainLayout->addLayout((devicePickLayout));
     mainLayout->addLayout(buttonLayout);
@@ -90,19 +108,19 @@ MainWindow::MainWindow(QWidget *parent)
     connect(camera, SIGNAL(newInfraredImage(QImage)), irVid, SLOT(setImage(QImage)));
     connect(startButton, SIGNAL(clicked()), camera, SLOT(startVideo()));
     connect(stopButton,SIGNAL(clicked()), camera, SLOT(stopVideo()));
-    connect(devicePathEdit,SIGNAL(textChanged(QString)),camera,SLOT(setCameraDevice(QString)));
+    connect(depthDevicePathEdit,SIGNAL(textChanged(QString)),camera,SLOT(setCameraDevice(QString)));
     connect(minSetting,SIGNAL(valueChanged(int)),camera,SLOT(setDepthMin(int)));
     connect(maxSetting,SIGNAL(valueChanged(int)),camera,SLOT(setDepthMax(int)));
     connect(byteGroup,SIGNAL(buttonClicked(int)),camera,SLOT(setDepthMask(int)));
 
     settings = new QSettings("solsticlipse", "depthview");
     if(settings->contains("depthCameraDevice")){
-        devicePathEdit->setText(settings->value("depthCameraDevice").toString());
+        depthDevicePathEdit->setText(settings->value("depthCameraDevice").toString());
     }
 }
 
 MainWindow::~MainWindow()
 {
-    settings->setValue("depthCameraDevice",devicePathEdit->text());
+    settings->setValue("depthCameraDevice",depthDevicePathEdit->text());
     delete settings;
 }
