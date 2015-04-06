@@ -626,7 +626,7 @@ void CameraDataFeed::createImages(void * voidData){
 
             u_int16_t depth = *(u_int16_t *)(data + pixel24);
             u_int8_t ir = data[pixel24 + 2];
-//            depth = int(depth/31.25 + 0.5); // convert to mm
+            depth = int(depth/31.25 + 0.5); // convert to mm
 
             /* out of bounds depth become zero */
             u_int16_t depthFiltered = depthMask &
