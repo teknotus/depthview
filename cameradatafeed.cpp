@@ -1,7 +1,7 @@
 #include "cameradatafeed.h"
 
 CameraDataFeed::CameraDataFeed(QObject *parent) :
-    QObject(parent)
+    QObject(parent),out(stdout)
 {
     state = (State)0;
     fd = -1;
@@ -22,7 +22,6 @@ CameraDataFeed::~CameraDataFeed(){
 void CameraDataFeed::printState(){
     // I should use array lookup here I know.
     // I kept doing it wrong, and getting compile errors. Lost patience.
-    QTextStream out(stdout);
     out << "state: " << (int)state << " states: ";
     for(int i = 0 ; i < 8 ; i++){
         State testState = (State)(1u << i);
@@ -271,7 +270,9 @@ bool CameraDataFeed::setFormat(){
         return false;
     }
 //    format.fmt.pix.pixelformat = 0x49564e49;      // INVI
-    format.fmt.pix.pixelformat = 0x495a4e49;      // INZI
+//    format.fmt.pix.pixelformat = 0x495a4e49;      // INZI
+    format.fmt.pix.pixelformat = 0x56595559;      // YUYV
+
 
     format.fmt.pix.width       = 640;             // Make sure it's the right size
     format.fmt.pix.height      = 480;
@@ -614,23 +615,35 @@ void CameraDataFeed::updateData()
 void CameraDataFeed::createImages(void * voidData){
     u_int8_t * data = (u_int8_t *)voidData;
     QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
+    Mat color_cv(480,640,CV_8UC2);
+    Mat color_cv_bgr(480,640,CV_8UC3);
+/*    QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
     QImage irImage = QImage( 640, 480, QImage::Format_ARGB32 );
     Mat depth_cv(480,640, CV_16U);
-    Mat ir_cv(480,640, CV_8U);
+    Mat ir_cv(480,640, CV_8U);*/
 
     for(int j = 0 ; j < 480 ; j++){
-        int step24 = 640*3*j;
-//        int step16 = 640*2*j;
+//        int step24 = 640*3*j;
+        int step16 = 640*2*j;
         for(int i = 0 ; i < 640 ; i++){
-            int pixel24 = step24 + 3*i;
-//            int pixel16 = step16 + 2*i;
+//            int pixel24 = step24 + 3*i;
+            int pixel16 = step16 + 2*i;
 
-            u_int16_t depth = *(u_int16_t *)(data + pixel24);
+            u_int16_t color_yuyv = *(u_int16_t *)(data + pixel16);
+            u_int8_t high = (color_yuyv >> 8) & 0xff;
+            u_int8_t low = color_yuyv & 0xff;
+            Vec2b colorpix_cv;
+            colorpix_cv[1] = high;
+            colorpix_cv[0] = low;
+            color_cv.at<cv::Vec2b>(j,i) = colorpix_cv;
+//            color_cv.at<cv::CV_8U>(j,i) = high;
+
+/*            u_int16_t depth = *(u_int16_t *)(data + pixel24);
             u_int8_t ir = data[pixel24 + 2];
-            depth = int(depth/31.25 + 0.5); // convert to mm
+            depth = int(depth/31.25 + 0.5);*/ // convert to mm
 
             /* out of bounds depth become zero */
-            u_int16_t depthFiltered = depthMask &
+/*            u_int16_t depthFiltered = depthMask &
                     (( depth < depthMin || depth > depthMax) ? 0 : depth);
 
             u_int8_t high = (depthFiltered >> 8) & 0xff;
@@ -641,34 +654,47 @@ void CameraDataFeed::createImages(void * voidData){
             depth_cv.at<cv::Vec2b>(j,i) = depthpix_cv;
             ir_cv.at<uchar>(j,i) = ir;
 
-            QRgb dPix = qRgb(low,
+            QRgb dPix = qRgb(low,*/
                              /* invert green unless value is zero */
-                             255 - (high == 0 ? 255 : high),
+//                             255 - (high == 0 ? 255 : high),
                              /* depth below min become blue */
-                             ((depth < depthMin) && (depth != 0)) ? 255 : 0);
-            QRgb irPix = qRgb(ir, ir, ir);
+//                             ((depth < depthMin) && (depth != 0)) ? 255 : 0);
+//            QRgb irPix = qRgb(ir, ir, ir);
+              QRgb colorPix = qRgb(low, high, 0);
 
-            dImage.setPixel(i,j,dPix);
-            irImage.setPixel(i,j,irPix);
+            dImage.setPixel(i,j,colorPix);
+//            irImage.setPixel(i,j,irPix);
         }
     }
     depthImage = dImage;
-    infraredImage = irImage;
+//    infraredImage = irImage;
     emit newDepthImage(depthImage);
-    emit newInfraredImage(infraredImage);
+//    emit newInfraredImage(infraredImage);
     if(takeSnap){
         QDateTime local(QDateTime::currentDateTime());
         int timestamp = (int)local.toUTC().toTime_t();
-        QString depth_filename = snapshotDir + QString("/depth/")
+        QString color_filename = snapshotDir + QString("/color/")
+                + QString::number(timestamp) + local.toString("zzz") + QString(".png");
+        QTextStream(stdout) << color_filename << endl;
+
+/*        QString depth_filename = snapshotDir + QString("/depth/")
                 + QString::number(timestamp) + local.toString("zzz") + QString(".png");
         QTextStream(stdout) << depth_filename << endl;
         QString ir_filename = snapshotDir + QString("/ir/")
                 + QString::number(timestamp) + local.toString("zzz") + QString(".png");
-        QTextStream(stdout) << ir_filename << endl;
+        QTextStream(stdout) << ir_filename << endl; */
         vector<int> png_settings;
         png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
         png_settings.push_back(0);
+        cvtColor(color_cv,color_cv_bgr,CV_YUV2BGR_YUYV);
+
         try {
+            imwrite(color_filename.toStdString(), color_cv_bgr, png_settings);
+        } catch (cv::Exception& error) {
+            QTextStream(stderr) << "error writing image" << error.what() << endl;
+        }
+
+        /*        try {
             imwrite(depth_filename.toStdString(), depth_cv, png_settings);
         } catch (cv::Exception& error) {
             QTextStream(stderr) << "error writing image" << error.what() << endl;
@@ -677,7 +703,7 @@ void CameraDataFeed::createImages(void * voidData){
             imwrite(ir_filename.toStdString(), ir_cv, png_settings);
         } catch (cv::Exception& error) {
             QTextStream(stderr) << "error writing image" << error.what() << endl;
-        }
+        }*/
         takeSnap = false;
     }
 //    delete depth_cv;

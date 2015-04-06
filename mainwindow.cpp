@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(camera, SIGNAL(newInfraredImage(QImage)), irVid, SLOT(setImage(QImage)));
     connect(startButton, SIGNAL(clicked()), camera, SLOT(startVideo()));
     connect(stopButton,SIGNAL(clicked()), camera, SLOT(stopVideo()));
-    connect(depthDevicePathEdit,SIGNAL(textChanged(QString)),camera,SLOT(setCameraDevice(QString)));
+    connect(colorDevicePathEdit,SIGNAL(textChanged(QString)),camera,SLOT(setCameraDevice(QString)));
     connect(minSetting,SIGNAL(valueChanged(int)),camera,SLOT(setDepthMin(int)));
     connect(maxSetting,SIGNAL(valueChanged(int)),camera,SLOT(setDepthMax(int)));
     connect(byteGroup,SIGNAL(buttonClicked(int)),camera,SLOT(setDepthMask(int)));
