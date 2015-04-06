@@ -616,6 +616,7 @@ void CameraDataFeed::createImages(void * voidData){
     QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
     QImage irImage = QImage( 640, 480, QImage::Format_ARGB32 );
     Mat depth_cv(480,640, CV_16U);
+    Mat ir_cv(480,640, CV_8U);
 
     for(int j = 0 ; j < 480 ; j++){
         int step24 = 640*3*j;
@@ -638,6 +639,7 @@ void CameraDataFeed::createImages(void * voidData){
             depthpix_cv[0] = high;
             depthpix_cv[1] = low;
             depth_cv.at<cv::Vec2b>(j,i) = depthpix_cv;
+            ir_cv.at<uchar>(j,i) = ir;
 
             QRgb dPix = qRgb(low,
                              /* invert green unless value is zero */
@@ -657,14 +659,22 @@ void CameraDataFeed::createImages(void * voidData){
     if(takeSnap){
         QDateTime local(QDateTime::currentDateTime());
         int timestamp = (int)local.toUTC().toTime_t();
-        QString depth_filename = snapshotDir //QString("/tmp/depthview/depth/")
+        QString depth_filename = snapshotDir + QString("/depth/")
                 + QString::number(timestamp) + local.toString("zzz") + QString(".png");
-        QTextStream(stdout) << depth_filename;
+        QTextStream(stdout) << depth_filename << endl;
+        QString ir_filename = snapshotDir + QString("/ir/")
+                + QString::number(timestamp) + local.toString("zzz") + QString(".png");
+        QTextStream(stdout) << ir_filename << endl;
         vector<int> png_settings;
         png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
         png_settings.push_back(0);
         try {
             imwrite(depth_filename.toStdString(), depth_cv, png_settings);
+        } catch (cv::Exception& error) {
+            QTextStream(stderr) << "error writing image" << error.what() << endl;
+        }
+        try {
+            imwrite(ir_filename.toStdString(), ir_cv, png_settings);
         } catch (cv::Exception& error) {
             QTextStream(stderr) << "error writing image" << error.what() << endl;
         }
