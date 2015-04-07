@@ -64,10 +64,10 @@ void CameraDataFeed::printState(){
 }
 
 bool CameraDataFeed::openCamera(){
-    QTextStream(stdout) << "Camera" << endl;
+    out << "Camera" << endl;
     if(state & OPEN)
     {
-        QTextStream(stdout) << "camera already open" << endl;
+        out << "camera already open" << endl;
         return false;
     }
     fd = open(device.toStdString().c_str(), O_NONBLOCK | O_RDWR); // Open non blocking becauce
@@ -82,7 +82,7 @@ bool CameraDataFeed::openCamera(){
 }
 
 void CameraDataFeed::openFifo(){
-    QTextStream(stdout) << "FIFO" << endl;
+    out << "FIFO" << endl;
     fifo_fd = open(fifo_filename.toStdString().c_str(), O_NONBLOCK | O_RDWR);
     if (fifo_fd == -1)
     {
@@ -93,8 +93,7 @@ void CameraDataFeed::openFifo(){
 }
 
 bool CameraDataFeed::getControls(){
-    QTextStream cout(stdout);
-    cout << "getcontrols:" << endl;
+    out << "getcontrols:" << endl;
 
 //    __u8 * data = (__u8 *)calloc(64,sizeof(__u8));
     __u8 control = 1;
@@ -234,12 +233,12 @@ void CameraDataFeed::setConfidenceSetting(int value){
 }
 
 bool CameraDataFeed::setFormat(){
-    QTextStream(stdout) << "FMT" << endl;
+    out << "FMT" << endl;
     if(! state & OPEN){
-        QTextStream(stdout) << "must open camera first" << endl;
+        out << "must open camera first" << endl;
         return false;
     }else if(state & REQBUFS){
-        QTextStream(stdout) << "cannot set format while buffers active" << endl;
+        out << "cannot set format while buffers active" << endl;
         return false;
     }
     struct v4l2_fmtdesc fmtdesc;
@@ -285,13 +284,13 @@ bool CameraDataFeed::setFormat(){
     return true;
 }
 bool CameraDataFeed::reqBuffers(){
-    QTextStream(stdout) << "REQBUFS" << endl;
+    out << "REQBUFS" << endl;
     uint dMask = OPEN | FMT;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "depends OPEN & FMT" << endl;
+        out << "depends OPEN & FMT" << endl;
         return false;
     } else if(state & REQBUFS){
-        QTextStream(stdout) << "REQBUF already done" << endl;
+        out << "REQBUF already done" << endl;
         return false;
     }
     buffercount = 2; // Double buffer
@@ -310,13 +309,13 @@ bool CameraDataFeed::reqBuffers(){
     return true;
 }
 bool CameraDataFeed::freeBuffers(){
-    QTextStream(stdout) << "freebuffers" << endl;
+    out << "freebuffers" << endl;
     uint dMask = OPEN | REQBUFS;
     if((state & dMask) != dMask){
-        QTextStream(stdout) << "depends OPEN & REQBUFS" << endl;
+        out << "depends OPEN & REQBUFS" << endl;
         return false;
     } else if(state & MMAP){
-        QTextStream(stdout) << "cannot free buffers while mapped" << endl;
+        out << "cannot free buffers while mapped" << endl;
         return false;
     }
     memset(&reqestBuffers, 0, sizeof(reqestBuffers));
@@ -335,7 +334,7 @@ bool CameraDataFeed::freeBuffers(){
 bool CameraDataFeed::newBufArray(){
     uint cMask = BUFFERS_ARRAY;
     if(state & cMask){
-        QTextStream(stdout) << "buffers array already created" << endl;
+        out << "buffers array already created" << endl;
         return false;
     }
     try{
@@ -348,14 +347,14 @@ bool CameraDataFeed::newBufArray(){
     return true;
 }
 bool CameraDataFeed::queryAllBuffers(){
-    QTextStream(stdout) << "query all buffers" << endl;
+    out << "query all buffers" << endl;
     uint dMask = OPEN | REQBUFS | BUFFERS_ARRAY;
     if((state & dMask) != dMask){
-        QTextStream(stdout) << "depends OPEN & REQBUFS & BUFFERS_ARRAY" << endl;
+        out << "depends OPEN & REQBUFS & BUFFERS_ARRAY" << endl;
         return false;
     }else if(state & QUERYBUF){
         // can't double queryAll because it overwrites buffers array
-        QTextStream(stdout) << "already queried" << endl;
+        out << "already queried" << endl;
         return false;
     }
     for (unsigned int i = 0; i < reqestBuffers.count; i++) {
@@ -378,14 +377,14 @@ bool CameraDataFeed::queryAllBuffers(){
     return true;
 }
 bool CameraDataFeed::mMAP(){
-    QTextStream(stdout) << "mmap" << endl;
+    out << "mmap" << endl;
     uint dMask = OPEN | REQBUFS | BUFFERS_ARRAY | QUERYBUF;
     uint cMask = MMAP | QBUF;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "depends OPEN REQBUFS BUFFERS_ARRAY QUERYBUF" << endl;
+        out << "depends OPEN REQBUFS BUFFERS_ARRAY QUERYBUF" << endl;
         return false;
     } else if(state & cMask){
-        QTextStream(stdout) << "MMAP already done" << endl;
+        out << "MMAP already done" << endl;
         return false;
     }
     for (unsigned int i = 0; i < reqestBuffers.count; i++) {
@@ -416,13 +415,13 @@ bool CameraDataFeed::mMAP(){
     return true;
 }
 bool CameraDataFeed::qbuf(){
-    QTextStream(stdout) << "qbuf" << endl;
+    out << "qbuf" << endl;
     uint dMask = OPEN | BUFFERS_ARRAY | MMAP;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "depends OPEN BUFFERS_ARRAY MMAP" << endl;
+        out << "depends OPEN BUFFERS_ARRAY MMAP" << endl;
         return false;
     } else if(state & STREAM){
-        QTextStream(stdout) << "Don't do this while streaming is on" << endl;
+        out << "Don't do this while streaming is on" << endl;
         return false;
     }
     for (unsigned int i = 0; i < reqestBuffers.count; i++) {
@@ -436,13 +435,13 @@ bool CameraDataFeed::qbuf(){
     return true;
 }
 bool CameraDataFeed::startStream(){
-    QTextStream(stdout) << "stream" << endl;
+    out << "stream" << endl;
     uint dMask = OPEN | MMAP | QBUF;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "depends OPEN MMAP QBUF" << endl;
+        out << "depends OPEN MMAP QBUF" << endl;
         return false;
     } else if(state & STREAM){
-        QTextStream(stdout) << "Already Streaming" << endl;
+        out << "Already Streaming" << endl;
         return false;
     }
     if (-1 == ioctl(fd, VIDIOC_STREAMON, &reqestBuffers.type)){
@@ -454,7 +453,7 @@ bool CameraDataFeed::startStream(){
 }
 bool CameraDataFeed::startClock(){
     if(state & TIMER){
-        QTextStream(stdout) << "Already ticking" << endl;
+        out << "Already ticking" << endl;
         return false;
     }
     timer->start(1);
@@ -464,7 +463,7 @@ bool CameraDataFeed::startClock(){
 bool CameraDataFeed::stopClock(){
     uint dMask = TIMER;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "Wasn't ticking already" << endl;
+        out << "Wasn't ticking already" << endl;
         return false;
     }
     timer->stop();
@@ -472,10 +471,10 @@ bool CameraDataFeed::stopClock(){
     return true;
 }
 bool CameraDataFeed::stopStream(){
-    QTextStream(stdout) << "stream off" << endl;
+    out << "stream off" << endl;
     uint dMask = OPEN | STREAM;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "depends OPEN STREAM" << endl;
+        out << "depends OPEN STREAM" << endl;
         return false;
     }
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -489,13 +488,13 @@ bool CameraDataFeed::stopStream(){
     return true;
 }
 bool CameraDataFeed::freeMmap(){
-    QTextStream(stdout) << "free mmap" << endl;
+    out << "free mmap" << endl;
     uint dMask = OPEN | BUFFERS_ARRAY | MMAP;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "depends OPEN BUFFERS_ARRAY MMAP" << endl;
+        out << "depends OPEN BUFFERS_ARRAY MMAP" << endl;
         return false;
     } else if(state & STREAM){
-        QTextStream(stdout) << "Cannot free mmap while streaming" << endl;
+        out << "Cannot free mmap while streaming" << endl;
         return false;
     }
     bool errors = false;
@@ -513,10 +512,10 @@ bool CameraDataFeed::freeBufferArray(){
     uint dMask = OPEN | BUFFERS_ARRAY;
     uint cMask = MMAP;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "depends OPEN BUFFERS_ARRAY" << endl;
+        out << "depends OPEN BUFFERS_ARRAY" << endl;
         return false;
     } else if(state & cMask){
-        QTextStream(stdout) << "cannot free buffer array while MMAP" << endl;
+        out << "cannot free buffer array while MMAP" << endl;
         return false;
     }
     delete[] buffers;
@@ -524,14 +523,14 @@ bool CameraDataFeed::freeBufferArray(){
     return true;
 }
 bool CameraDataFeed::closeCamera(){
-    QTextStream(stdout) << "closing camera" << endl;
+    out << "closing camera" << endl;
     uint dMask = OPEN;
     uint cMask = MMAP;
     if(! ((state & dMask) == dMask)){
-        QTextStream(stdout) << "file not open" << endl;
+        out << "file not open" << endl;
         return false;
     } else if(state & cMask){
-        QTextStream(stdout) << "cannot close program while MMAP" << endl;
+        out << "cannot close program while MMAP" << endl;
         return false;
     }
     if (-1 == close(fd)){
@@ -596,7 +595,7 @@ void CameraDataFeed::updateData()
            stopClock();
        } else {
            perror("readbuf");
-           QTextStream(stdout) << "err!" << endl;
+           out << "err!" << endl;
        }
     } else {
         // VIDIOC_DQBUF doesn't actually return pointer to data when using mmap
@@ -675,14 +674,14 @@ void CameraDataFeed::createImages(void * voidData){
         int timestamp = (int)local.toUTC().toTime_t();
         QString color_filename = snapshotDir + QString("/color/")
                 + QString::number(timestamp) + local.toString("zzz") + QString(".png");
-        QTextStream(stdout) << color_filename << endl;
+        out << color_filename << endl;
 
 /*        QString depth_filename = snapshotDir + QString("/depth/")
                 + QString::number(timestamp) + local.toString("zzz") + QString(".png");
-        QTextStream(stdout) << depth_filename << endl;
+        out << depth_filename << endl;
         QString ir_filename = snapshotDir + QString("/ir/")
                 + QString::number(timestamp) + local.toString("zzz") + QString(".png");
-        QTextStream(stdout) << ir_filename << endl; */
+        out << ir_filename << endl; */
         vector<int> png_settings;
         png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
         png_settings.push_back(0);
@@ -709,15 +708,15 @@ void CameraDataFeed::createImages(void * voidData){
 //    delete depth_cv;
 }
 void CameraDataFeed::setDepthMin(int minimum){
-    QTextStream(stdout) << "set depth min: " << minimum << endl;
+    out << "set depth min: " << minimum << endl;
     depthMin = (u_int16_t)minimum;
 }
 void CameraDataFeed::setDepthMax(int maximum){
-    QTextStream(stdout) << "set depth max: " << maximum << endl;
+    out << "set depth max: " << maximum << endl;
     depthMax = (u_int16_t)maximum;
 }
 void CameraDataFeed::setDepthMask(int byteMask){
-    QTextStream(stdout) << "set depth mask" << endl;
+    out << "set depth mask" << endl;
     depthMask = (u_int16_t)byteMask;
 }
 
