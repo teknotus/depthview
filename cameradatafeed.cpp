@@ -613,7 +613,7 @@ void CameraDataFeed::updateData()
 
 void CameraDataFeed::createImages(void * voidData){
     u_int8_t * data = (u_int8_t *)voidData;
-    QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
+//    QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
     Mat color_cv(480,640,CV_8UC2);
     Mat color_cv_bgr(480,640,CV_8UC3);
 /*    QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
@@ -659,13 +659,18 @@ void CameraDataFeed::createImages(void * voidData){
                              /* depth below min become blue */
 //                             ((depth < depthMin) && (depth != 0)) ? 255 : 0);
 //            QRgb irPix = qRgb(ir, ir, ir);
-              QRgb colorPix = qRgb(low, high, 0);
+//              QRgb colorPix = qRgb(low, high, 0);
 
-            dImage.setPixel(i,j,colorPix);
+//            dImage.setPixel(i,j,colorPix);
 //            irImage.setPixel(i,j,irPix);
         }
     }
-    depthImage = dImage;
+    cvtColor(color_cv,color_cv_bgr,CV_YUV2BGR_YUYV);
+    Mat color_cv_rgb;
+    cvtColor(color_cv_bgr,color_cv_rgb,CV_BGR2RGB);
+    depthImage = QImage(color_cv_rgb.data,color_cv_rgb.cols,color_cv_rgb.rows,
+                        color_cv_rgb.step,QImage::Format_RGB888).copy();
+//    depthImage = dImage;
 //    infraredImage = irImage;
     emit newDepthImage(depthImage);
 //    emit newInfraredImage(infraredImage);
@@ -685,7 +690,6 @@ void CameraDataFeed::createImages(void * voidData){
         vector<int> png_settings;
         png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
         png_settings.push_back(0);
-        cvtColor(color_cv,color_cv_bgr,CV_YUV2BGR_YUYV);
 
         try {
             imwrite(color_filename.toStdString(), color_cv_bgr, png_settings);
