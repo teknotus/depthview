@@ -19,6 +19,7 @@ void VideoWidget::paintEvent(QPaintEvent *)
 }
 
 void VideoWidget::setImage(QImage img){
+    setFixedSize(img.width(),img.height());
     image = img;
     repaint();
 }
