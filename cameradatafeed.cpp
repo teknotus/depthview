@@ -273,8 +273,10 @@ bool CameraDataFeed::setFormat(){
     format.fmt.pix.pixelformat = 0x56595559;      // YUYV
 
 
-    format.fmt.pix.width       = 640;             // Make sure it's the right size
-    format.fmt.pix.height      = 480;
+//    format.fmt.pix.width       = width;             // Make sure it's the right size
+//    format.fmt.pix.height      = height;
+    format.fmt.pix.width       = 1920;
+    format.fmt.pix.height      = 1080;
     if (-1 == ioctl(fd, VIDIOC_S_FMT, &format)){  // Set video format
         perror("setting format");
         return false;
@@ -612,19 +614,21 @@ void CameraDataFeed::updateData()
 }
 
 void CameraDataFeed::createImages(void * voidData){
+    const int width = 1920;
+    const int height = 1080;
     u_int8_t * data = (u_int8_t *)voidData;
-//    QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
-    Mat color_cv(480,640,CV_8UC2);
-    Mat color_cv_bgr(480,640,CV_8UC3);
-/*    QImage dImage = QImage( 640, 480, QImage::Format_ARGB32 );
-    QImage irImage = QImage( 640, 480, QImage::Format_ARGB32 );
-    Mat depth_cv(480,640, CV_16U);
-    Mat ir_cv(480,640, CV_8U);*/
+//    QImage dImage = QImage( width, height, QImage::Format_ARGB32 );
+    Mat color_cv(height,width,CV_8UC2);
+    Mat color_cv_bgr(height,width,CV_8UC3);
+/*    QImage dImage = QImage( width, height, QImage::Format_ARGB32 );
+    QImage irImage = QImage( width, height, QImage::Format_ARGB32 );
+    Mat depth_cv(height,width, CV_16U);
+    Mat ir_cv(height,width, CV_8U);*/
 
-    for(int j = 0 ; j < 480 ; j++){
-//        int step24 = 640*3*j;
-        int step16 = 640*2*j;
-        for(int i = 0 ; i < 640 ; i++){
+    for(int j = 0 ; j < height ; j++){
+//        int step24 = width*3*j;
+        int step16 = width*2*j;
+        for(int i = 0 ; i < width ; i++){
 //            int pixel24 = step24 + 3*i;
             int pixel16 = step16 + 2*i;
 
