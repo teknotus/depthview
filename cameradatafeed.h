@@ -28,10 +28,8 @@ class CameraDataFeed : public QObject
     ~CameraDataFeed();
     QTextStream out;
     QString device;
-    QString fifo_filename;
     QString snapshotDir;
     int fd;
-    int fifo_fd;
     QImage colorImage;
     QImage depthImage;
     QImage infraredImage;
@@ -116,7 +114,6 @@ public slots:
     void setDepthMax(int);
     void setDepthMask(int);
     void savePicture();
-    void setFifoFilename(QString);
     void setSnapshotDir(QString);
 };
 

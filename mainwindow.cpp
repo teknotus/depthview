@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent),out(stdout)
 {
     mainLayout = new QVBoxLayout();
     colorVid = new VideoWidget();
@@ -110,6 +110,9 @@ MainWindow::MainWindow(QWidget *parent)
     centerWidget->setLayout(mainLayout);
     setCentralWidget(centerWidget);
 
+    timer = new QTimer(this);
+    fifo_fd = -1;
+
     connect(colorCamera,SIGNAL(newDepthImage(QImage)),depthVid,SLOT(setImage(QImage)));
     connect(colorCamera, SIGNAL(newInfraredImage(QImage)), irVid, SLOT(setImage(QImage)));
     connect(startButton, SIGNAL(clicked()), colorCamera, SLOT(startVideo()));
@@ -123,6 +126,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(stopButton,SIGNAL(clicked()), depthCamera, SLOT(stopVideo()));
     connect(depthDevicePathEdit,SIGNAL(textChanged(QString)),depthCamera,SLOT(setCameraDevice(QString)));
 
+    connect(startButton,SIGNAL(clicked()),this,SLOT(openFifo()));
+    connect(stopButton,SIGNAL(clicked()),this,SLOT(closeFifo()));
+
     /*
     connect(minSetting,SIGNAL(valueChanged(int)),depthCamera,SLOT(setDepthMin(int)));
     connect(maxSetting,SIGNAL(valueChanged(int)),depthCamera,SLOT(setDepthMax(int)));
@@ -130,11 +136,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(snapshotButton,SIGNAL(clicked()),colorCamera,SLOT(savePicture()));
     connect(snapshotButton,SIGNAL(clicked()),depthCamera,SLOT(savePicture()));
+    connect(this,SIGNAL(takeSnap()),colorCamera,SLOT(savePicture()));
+    connect(this,SIGNAL(takeSnap()),depthCamera,SLOT(savePicture()));
 
     connect(snapshotDirEdit,SIGNAL(textChanged(QString)),colorCamera,SLOT(setSnapshotDir(QString)));
     connect(snapshotDirEdit,SIGNAL(textChanged(QString)),depthCamera,SLOT(setSnapshotDir(QString)));
     connect(fifoRemoteFilenameEdit,SIGNAL(textChanged(QString)),
-            depthCamera,SLOT(setFifoFilename(QString)));
+            this,SLOT(setFifoFilename(QString)));
 
     settings = new QSettings("solsticlipse", "depthview");
     if(settings->contains("colorCameraDevice")){
@@ -149,13 +157,53 @@ MainWindow::MainWindow(QWidget *parent)
     if(settings->contains("fifoRemoteFilename")){
         fifoRemoteFilenameEdit->setText(settings->value("fifoRemoteFilename").toString());
     }
+    connect(timer, SIGNAL(timeout()), this, SLOT(checkFifo()));
 }
 
 MainWindow::~MainWindow()
 {
+    delete timer;
     settings->setValue("colorCameraDevice",colorDevicePathEdit->text());
     settings->setValue("depthCameraDevice",depthDevicePathEdit->text());
     settings->setValue("snapshotDirectory",snapshotDirEdit->text());
     settings->setValue("fifoRemoteFilename",fifoRemoteFilenameEdit->text());
     delete settings;
+}
+
+void MainWindow::setFifoFilename(QString filename){
+    fifo_filename = filename;
+}
+
+void MainWindow::openFifo(){
+    out << "FIFO" << endl;
+    fifo_fd = open(fifo_filename.toStdString().c_str(), O_NONBLOCK | O_RDWR);
+    if (fifo_fd == -1)
+    {
+        perror("opening fifo");
+        return;
+    }
+    timer->start(1);
+    return;
+}
+
+void MainWindow::closeFifo(){
+    timer->stop();
+    if (-1 == ::close(fifo_fd)){
+        perror("close fifo");
+    }
+    fifo_fd = -1;
+}
+
+void MainWindow::checkFifo(){
+    char command;
+    if (-1 == read(fifo_fd,&command,1)){
+        if(errno == EAGAIN){
+            /* no command */
+        } else if(errno == ENODEV){
+            /* no fifo */
+        }
+    } else {
+        out << "takeSnap" << endl;
+        emit takeSnap();
+    }
 }

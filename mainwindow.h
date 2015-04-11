@@ -15,6 +15,8 @@
 #include <videowidget.h>
 #include <controlswidget.h>
 
+using namespace std;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -70,8 +72,19 @@ public:
     QPushButton * accuracyButton;
     QPushButton * infoButton;
 
-public slots:
+    QTextStream out;
+    QTimer *timer;
+    QString fifo_filename;
+    int fifo_fd;
 
+signals:
+    void takeSnap();
+
+public slots:
+    void setFifoFilename(QString);
+    void openFifo();
+    void closeFifo();
+    void checkFifo();
 };
 
 #endif // MAINWINDOW_H
