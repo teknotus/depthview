@@ -4,15 +4,21 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     mainLayout = new QVBoxLayout();
+    colorVid = new VideoWidget();
+    colorVid->setWindowTitle("Color");
+    colorVid->show();
     depthVid = new VideoWidget();
     depthVid->setWindowTitle("Depth");
     depthVid->show();
     irVid = new VideoWidget();
     irVid->setWindowTitle("Infrared");
     irVid->show();
-    camera = new CameraDataFeed();
+    colorCamera = new CameraDataFeed();
+    colorCamera->setFourcc(0x56595559);
+    depthCamera = new CameraDataFeed();
+    depthCamera->setFourcc(0x495a4e49);
     controlsWidget = new ControlsWidget();
-    controlsWidget->setCamera(camera);
+    controlsWidget->setCamera(depthCamera);
     controlsWidget->setWindowTitle("Video Controls");
     controlsWidget->show();
 
@@ -55,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
     buttonLayout->addWidget(startButton);
     buttonLayout->addWidget(stopButton);
 
-    minLayout = new QHBoxLayout();
+    /*minLayout = new QHBoxLayout();
     minLabel = new QLabel("Min Distance");
     minSetting = new QSlider(Qt::Horizontal);
     minSetting->setMinimum(0);
@@ -90,11 +96,11 @@ MainWindow::MainWindow(QWidget *parent)
     bothButton->setChecked(true);
     byteLayout->addWidget(bothButton);
     byteLayout->addWidget(lowButton);
-    byteLayout->addWidget(highButton);
+    byteLayout->addWidget(highButton);*/
 
-    mainLayout->addLayout(minLayout);
+    /*mainLayout->addLayout(minLayout);
     mainLayout->addLayout(maxLayout);
-    mainLayout->addLayout(byteLayout);
+    mainLayout->addLayout(byteLayout);*/
     mainLayout->addLayout(snapshotLayout);
     mainLayout->addLayout(fifoRemoteLayout);
 
@@ -104,18 +110,31 @@ MainWindow::MainWindow(QWidget *parent)
     centerWidget->setLayout(mainLayout);
     setCentralWidget(centerWidget);
 
-    connect(camera,SIGNAL(newDepthImage(QImage)),depthVid,SLOT(setImage(QImage)));
-    connect(camera, SIGNAL(newInfraredImage(QImage)), irVid, SLOT(setImage(QImage)));
-    connect(startButton, SIGNAL(clicked()), camera, SLOT(startVideo()));
-    connect(stopButton,SIGNAL(clicked()), camera, SLOT(stopVideo()));
-    connect(colorDevicePathEdit,SIGNAL(textChanged(QString)),camera,SLOT(setCameraDevice(QString)));
-    connect(minSetting,SIGNAL(valueChanged(int)),camera,SLOT(setDepthMin(int)));
-    connect(maxSetting,SIGNAL(valueChanged(int)),camera,SLOT(setDepthMax(int)));
-    connect(byteGroup,SIGNAL(buttonClicked(int)),camera,SLOT(setDepthMask(int)));
-    connect(snapshotButton,SIGNAL(clicked()),camera,SLOT(savePicture()));
-    connect(snapshotDirEdit,SIGNAL(textChanged(QString)),camera,SLOT(setSnapshotDir(QString)));
+    connect(colorCamera,SIGNAL(newDepthImage(QImage)),depthVid,SLOT(setImage(QImage)));
+    connect(colorCamera, SIGNAL(newInfraredImage(QImage)), irVid, SLOT(setImage(QImage)));
+    connect(startButton, SIGNAL(clicked()), colorCamera, SLOT(startVideo()));
+    connect(stopButton,SIGNAL(clicked()), colorCamera, SLOT(stopVideo()));
+    connect(colorDevicePathEdit,SIGNAL(textChanged(QString)),colorCamera,SLOT(setCameraDevice(QString)));
+
+    connect(colorCamera,SIGNAL(newColorImage(QImage)),colorVid,SLOT(setImage(QImage)));
+    connect(depthCamera,SIGNAL(newDepthImage(QImage)),depthVid,SLOT(setImage(QImage)));
+    connect(depthCamera, SIGNAL(newInfraredImage(QImage)), irVid, SLOT(setImage(QImage)));
+    connect(startButton, SIGNAL(clicked()), depthCamera, SLOT(startVideo()));
+    connect(stopButton,SIGNAL(clicked()), depthCamera, SLOT(stopVideo()));
+    connect(depthDevicePathEdit,SIGNAL(textChanged(QString)),depthCamera,SLOT(setCameraDevice(QString)));
+
+    /*
+    connect(minSetting,SIGNAL(valueChanged(int)),depthCamera,SLOT(setDepthMin(int)));
+    connect(maxSetting,SIGNAL(valueChanged(int)),depthCamera,SLOT(setDepthMax(int)));
+    connect(byteGroup,SIGNAL(buttonClicked(int)),depthCamera,SLOT(setDepthMask(int)));*/
+
+    connect(snapshotButton,SIGNAL(clicked()),colorCamera,SLOT(savePicture()));
+    connect(snapshotButton,SIGNAL(clicked()),depthCamera,SLOT(savePicture()));
+
+    connect(snapshotDirEdit,SIGNAL(textChanged(QString)),colorCamera,SLOT(setSnapshotDir(QString)));
+    connect(snapshotDirEdit,SIGNAL(textChanged(QString)),depthCamera,SLOT(setSnapshotDir(QString)));
     connect(fifoRemoteFilenameEdit,SIGNAL(textChanged(QString)),
-            camera,SLOT(setFifoFilename(QString)));
+            depthCamera,SLOT(setFifoFilename(QString)));
 
     settings = new QSettings("solsticlipse", "depthview");
     if(settings->contains("colorCameraDevice")){
