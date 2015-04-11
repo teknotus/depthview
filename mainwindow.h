@@ -28,9 +28,11 @@ public:
     QHBoxLayout *depthDevicePickLayout;
     QHBoxLayout *buttonLayout;
     QWidget *centerWidget;
+    VideoWidget *colorVid;
     VideoWidget *depthVid;
     VideoWidget *irVid;
-    CameraDataFeed *camera;
+    CameraDataFeed *colorCamera;
+    CameraDataFeed *depthCamera;
     ControlsWidget *controlsWidget;
     QLabel *colorDeviceLabel;
     QLineEdit *colorDevicePathEdit;

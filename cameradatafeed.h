@@ -32,12 +32,14 @@ class CameraDataFeed : public QObject
     QString snapshotDir;
     int fd;
     int fifo_fd;
+    QImage colorImage;
     QImage depthImage;
     QImage infraredImage;
     bool takeSnap;
     u_int16_t depthMin;
     u_int16_t depthMax;
     u_int16_t depthMask;
+    u_int32_t fourcc;
     struct v4l2_format v4l2Format;
     __u32 buffercount;
     v4l2_buffer * buffers;
@@ -73,6 +75,16 @@ class CameraDataFeed : public QObject
         STREAM  =        (1u << 7),
         TIMER  =         (1u << 8),
     };
+    enum PixelFormat {
+        YUYV = 0x56595559,
+        INVZ = 0x5a564e49,
+        INZI = 0x495a4e49,
+        INVR = 0x52564e49,
+        INRI = 0x49524e49,
+        INVI = 0x49564e49,
+        RELI = 0x494c4552
+    };
+
 //    static const char ** StateStrings = {
 //        "OPEN", "FMT", "REQBUFS", "BUFFERS_ARRAY", "QUERYBUF",
 //        "MMAP", "QBUF", "STREAM", "TIMER"
@@ -85,6 +97,7 @@ public:
 
 signals:
 //    void newData(void *);
+    void newColorImage(QImage);
     void newDepthImage(QImage);
     void newInfraredImage(QImage);
 
@@ -93,6 +106,7 @@ public slots:
     void startVideo();
     void stopVideo();
     void setCameraDevice(QString);
+    void setFourcc(u_int32_t);
     void setLaserPower(int);
     void setIvcamSetting(int);
     void setMrtoSetting(int);

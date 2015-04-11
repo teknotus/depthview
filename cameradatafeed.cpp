@@ -261,27 +261,27 @@ bool CameraDataFeed::setFormat(){
         i++;
     }
     delete[] pixfmt;
-    struct v4l2_format format;
-    memset(&format, 0, sizeof(format));           // Clear struct
-    format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;    // Required
-    if (-1 == ioctl(fd, VIDIOC_G_FMT, &format)){  // Get video format
+    struct v4l2_format pixFormat;
+    memset(&pixFormat, 0, sizeof(pixFormat));           // Clear struct
+    pixFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;    // Required
+    if (-1 == ioctl(fd, VIDIOC_G_FMT, &pixFormat)){  // Get video format
         perror("getting format");
         return false;
     }
-//    format.fmt.pix.pixelformat = 0x49564e49;      // INVI
-//    format.fmt.pix.pixelformat = 0x495a4e49;      // INZI
-    format.fmt.pix.pixelformat = 0x56595559;      // YUYV
+    pixFormat.fmt.pix.pixelformat = fourcc;
 
-
-//    format.fmt.pix.width       = width;             // Make sure it's the right size
-//    format.fmt.pix.height      = height;
-    format.fmt.pix.width       = 1920;
-    format.fmt.pix.height      = 1080;
-    if (-1 == ioctl(fd, VIDIOC_S_FMT, &format)){  // Set video format
+    if(fourcc == YUYV){
+        pixFormat.fmt.pix.width       = 1920;
+        pixFormat.fmt.pix.height      = 1080;
+    } else {
+        pixFormat.fmt.pix.width       = 640;
+        pixFormat.fmt.pix.height      = 480;
+    }
+    if (-1 == ioctl(fd, VIDIOC_S_FMT, &pixFormat)){  // Set video format
         perror("setting format");
         return false;
     }
-    v4l2Format = format;
+    v4l2Format = pixFormat;
     state = (State)(state | FMT);
     return true;
 }
@@ -614,106 +614,129 @@ void CameraDataFeed::updateData()
 }
 
 void CameraDataFeed::createImages(void * voidData){
-    const int width = 1920;
-    const int height = 1080;
+    const int width = v4l2Format.fmt.pix.width;
+    const int height = v4l2Format.fmt.pix.height;
+    const u_int32_t pixelFormat = v4l2Format.fmt.pix.pixelformat;
     u_int8_t * data = (u_int8_t *)voidData;
-//    QImage dImage = QImage( width, height, QImage::Format_ARGB32 );
+
+    QDateTime local(QDateTime::currentDateTime());
+    int timestamp = (int)local.toUTC().toTime_t();
+    QString common_filename = QString::number(timestamp) + local.toString("zzz")
+            + QString(".png");
+    vector<int> png_settings;
+    png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    png_settings.push_back(0);
+
     Mat color_cv(height,width,CV_8UC2);
-    Mat color_cv_bgr(height,width,CV_8UC3);
-/*    QImage dImage = QImage( width, height, QImage::Format_ARGB32 );
-    QImage irImage = QImage( width, height, QImage::Format_ARGB32 );
+    Mat color_cv_rgb;
     Mat depth_cv(height,width, CV_16U);
-    Mat ir_cv(height,width, CV_8U);*/
+    Mat ir_cv(height,width, CV_8U);
+    Mat depth_cv_8;
+    Mat depth_cv_rgb(height,width,CV_8UC3);
+    Mat ir_cv_rgb(height,width,CV_8UC3);
 
-    for(int j = 0 ; j < height ; j++){
-//        int step24 = width*3*j;
-        int step16 = width*2*j;
-        for(int i = 0 ; i < width ; i++){
-//            int pixel24 = step24 + 3*i;
-            int pixel16 = step16 + 2*i;
+    switch(pixelFormat){
+    case YUYV:
+        for(int j = 0 ; j < height ; j++){
+            int step16 = width*2*j;
+            for(int i = 0 ; i < width ; i++){
+                int pixel16 = step16 + 2*i;
 
-            u_int16_t color_yuyv = *(u_int16_t *)(data + pixel16);
-            u_int8_t high = (color_yuyv >> 8) & 0xff;
-            u_int8_t low = color_yuyv & 0xff;
-            Vec2b colorpix_cv;
-            colorpix_cv[1] = high;
-            colorpix_cv[0] = low;
-            color_cv.at<cv::Vec2b>(j,i) = colorpix_cv;
-//            color_cv.at<cv::CV_8U>(j,i) = high;
+                u_int16_t color_yuyv = *(u_int16_t *)(data + pixel16);
+                u_int8_t high = (color_yuyv >> 8) & 0xff;
+                u_int8_t low = color_yuyv & 0xff;
+                Vec2b colorpix_cv;
+                colorpix_cv[1] = high;
+                colorpix_cv[0] = low;
+                color_cv.at<cv::Vec2b>(j,i) = colorpix_cv;
+            }
+        }
+        cvtColor(color_cv,color_cv_rgb,CV_YUV2RGB_YUYV);
+        colorImage = QImage(color_cv_rgb.data,color_cv_rgb.cols,color_cv_rgb.rows,
+                            color_cv_rgb.step,QImage::Format_RGB888).copy();
+        emit newColorImage(colorImage);
+        if(takeSnap){
+            QString color_filename = snapshotDir + QString("/color/")
+                    + common_filename;
+            out << color_filename << endl;
+            try {
+                imwrite(color_filename.toStdString(), color_cv_rgb, png_settings);
+            } catch (cv::Exception& error) {
+                QTextStream(stderr) << "error writing image" << error.what() << endl;
+            }
+            takeSnap = false;
+        }
+        break;
+    case INVZ:
+    case INVR:
+        // process depth
+        break;
+    case INVI:
+    case RELI:
+        // process infrared
+        break;
+    case INZI:
+    case INRI:
+        //process depth/ir
+        for(int j = 0 ; j < height ; j++){
+            int step24 = width*3*j;
+            for(int i = 0 ; i < width ; i++){
+                int pixel24 = step24 + 3*i;
+                u_int16_t depth = *(u_int16_t *)(data + pixel24);
+                u_int8_t ir = data[pixel24 + 2];
+                depth = int(depth/31.25 + 0.5); // convert to mm
+                u_int8_t high = (depth >> 8) & 0xff;
+                u_int8_t low = depth & 0xff;
+                Vec2b depthpix_cv;
+                depthpix_cv[0] = high;
+                depthpix_cv[1] = low;
+                depth_cv.at<cv::Vec2b>(j,i) = depthpix_cv;
+                ir_cv.at<uchar>(j,i) = ir;
+            }
+        }
+        depth_cv.convertTo(depth_cv_8,CV_8U,1.0/256.0);
+        cvtColor(depth_cv_8,depth_cv_rgb,CV_GRAY2RGB);
+        depthImage = QImage(depth_cv_rgb.data,depth_cv_rgb.cols,depth_cv_rgb.rows,
+                            depth_cv_rgb.step,QImage::Format_RGB888).copy();
+        emit newDepthImage(depthImage);
+        cvtColor(ir_cv,ir_cv_rgb,CV_GRAY2RGB);
+        infraredImage = QImage(ir_cv_rgb.data,ir_cv_rgb.cols,ir_cv_rgb.rows,
+                            ir_cv_rgb.step,QImage::Format_RGB888).copy();
+        emit newInfraredImage(infraredImage);
+        if(takeSnap){
+            QString depth_filename = snapshotDir + QString("/depth/")
+                    + common_filename;
+            out << depth_filename << endl;
+            try {
+                imwrite(depth_filename.toStdString(), depth_cv, png_settings);
+            } catch (cv::Exception& error) {
+                QTextStream(stderr) << "error writing image" << error.what() << endl;
+            }
+            QString ir_filename = snapshotDir + QString("/ir/")
+                    + common_filename;
+            out << ir_filename << endl;
+            try {
+                imwrite(ir_filename.toStdString(), ir_cv, png_settings);
+            } catch (cv::Exception& error) {
+                QTextStream(stderr) << "error writing image" << error.what() << endl;
+            }
+            takeSnap = false;
+        }
+        break;
+    }
 
-/*            u_int16_t depth = *(u_int16_t *)(data + pixel24);
-            u_int8_t ir = data[pixel24 + 2];
-            depth = int(depth/31.25 + 0.5);*/ // convert to mm
-
-            /* out of bounds depth become zero */
-/*            u_int16_t depthFiltered = depthMask &
-                    (( depth < depthMin || depth > depthMax) ? 0 : depth);
-
-            u_int8_t high = (depthFiltered >> 8) & 0xff;
-            u_int8_t low = depthFiltered & 0xff;
-            Vec2b depthpix_cv;
-            depthpix_cv[0] = high;
-            depthpix_cv[1] = low;
-            depth_cv.at<cv::Vec2b>(j,i) = depthpix_cv;
-            ir_cv.at<uchar>(j,i) = ir;
-
-            QRgb dPix = qRgb(low,*/
-                             /* invert green unless value is zero */
+/*
+//            QRgb dPix = qRgb(low,
+                             // invert green unless value is zero
 //                             255 - (high == 0 ? 255 : high),
-                             /* depth below min become blue */
+                             // depth below min become blue
 //                             ((depth < depthMin) && (depth != 0)) ? 255 : 0);
 //            QRgb irPix = qRgb(ir, ir, ir);
 //              QRgb colorPix = qRgb(low, high, 0);
-
-//            dImage.setPixel(i,j,colorPix);
-//            irImage.setPixel(i,j,irPix);
-        }
-    }
-    cvtColor(color_cv,color_cv_bgr,CV_YUV2BGR_YUYV);
-    Mat color_cv_rgb;
-    cvtColor(color_cv_bgr,color_cv_rgb,CV_BGR2RGB);
-    depthImage = QImage(color_cv_rgb.data,color_cv_rgb.cols,color_cv_rgb.rows,
-                        color_cv_rgb.step,QImage::Format_RGB888).copy();
-//    depthImage = dImage;
-//    infraredImage = irImage;
-    emit newDepthImage(depthImage);
-//    emit newInfraredImage(infraredImage);
-    if(takeSnap){
-        QDateTime local(QDateTime::currentDateTime());
-        int timestamp = (int)local.toUTC().toTime_t();
-        QString color_filename = snapshotDir + QString("/color/")
-                + QString::number(timestamp) + local.toString("zzz") + QString(".png");
-        out << color_filename << endl;
-
-/*        QString depth_filename = snapshotDir + QString("/depth/")
-                + QString::number(timestamp) + local.toString("zzz") + QString(".png");
-        out << depth_filename << endl;
-        QString ir_filename = snapshotDir + QString("/ir/")
-                + QString::number(timestamp) + local.toString("zzz") + QString(".png");
-        out << ir_filename << endl; */
-        vector<int> png_settings;
-        png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
-        png_settings.push_back(0);
-
-        try {
-            imwrite(color_filename.toStdString(), color_cv_bgr, png_settings);
-        } catch (cv::Exception& error) {
-            QTextStream(stderr) << "error writing image" << error.what() << endl;
-        }
-
-        /*        try {
-            imwrite(depth_filename.toStdString(), depth_cv, png_settings);
-        } catch (cv::Exception& error) {
-            QTextStream(stderr) << "error writing image" << error.what() << endl;
-        }
-        try {
-            imwrite(ir_filename.toStdString(), ir_cv, png_settings);
-        } catch (cv::Exception& error) {
-            QTextStream(stderr) << "error writing image" << error.what() << endl;
-        }*/
-        takeSnap = false;
-    }
-//    delete depth_cv;
+*/
+}
+void CameraDataFeed::setFourcc(u_int32_t fcc){
+    fourcc = fcc;
 }
 void CameraDataFeed::setDepthMin(int minimum){
     out << "set depth min: " << minimum << endl;
