@@ -5,7 +5,6 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
 {
     state = (State)0;
     fd = -1;
-    fifo_fd = -1;
 //    fifo_filename = QString("/tmp/depthview/fifo");
     takeSnap = false;
     memset(&v4l2Format,0,sizeof(v4l2_format));
@@ -79,17 +78,6 @@ bool CameraDataFeed::openCamera(){
 
     state = (State)(state | OPEN);
     return true;
-}
-
-void CameraDataFeed::openFifo(){
-    out << "FIFO" << endl;
-    fifo_fd = open(fifo_filename.toStdString().c_str(), O_NONBLOCK | O_RDWR);
-    if (fifo_fd == -1)
-    {
-        perror("opening device");
-        return;
-    }
-    return;
 }
 
 bool CameraDataFeed::getControls(){
@@ -545,7 +533,6 @@ bool CameraDataFeed::closeCamera(){
 }
 void CameraDataFeed::startVideo(){
     openCamera();
-    openFifo();
     getControls();
     setFormat();
     reqBuffers();
@@ -573,16 +560,6 @@ void CameraDataFeed::updateData()
     uint dMask = OPEN | STREAM;
     if((state & dMask) != dMask){
         return;
-    }
-    char command;
-    if (-1 == read(fifo_fd,&command,1)){
-        if(errno == EAGAIN){
-            /* no command */
-        } else if(errno == ENODEV){
-            /* no fifo */
-        }
-    } else {
-        takeSnap = true;
     }
     struct v4l2_buffer dqbuf;
     memset(&dqbuf, 0, sizeof(dqbuf));
@@ -754,9 +731,7 @@ void CameraDataFeed::setDepthMask(int byteMask){
 void CameraDataFeed::savePicture(){
     takeSnap = true;
 }
-void CameraDataFeed::setFifoFilename(QString filename){
-    fifo_filename = filename;
-}
+
 void CameraDataFeed::setSnapshotDir(QString dir){
     snapshotDir = dir;
 }
