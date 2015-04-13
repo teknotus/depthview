@@ -633,11 +633,13 @@ void CameraDataFeed::createImages(void * voidData){
                             color_cv_rgb.step,QImage::Format_RGB888).copy();
         emit newColorImage(colorImage);
         if(takeSnap){
+            Mat color_cv_bgr;
+            cvtColor(color_cv_rgb, color_cv_bgr, CV_RGB2BGR);
             QString color_filename = snapshotDir + QString("/color/")
                     + common_filename;
             out << color_filename << endl;
             try {
-                imwrite(color_filename.toStdString(), color_cv_rgb, png_settings);
+                imwrite(color_filename.toStdString(), color_cv_bgr, png_settings);
             } catch (cv::Exception& error) {
                 QTextStream(stderr) << "error writing image" << error.what() << endl;
             }
