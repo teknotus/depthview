@@ -4,9 +4,9 @@ New laptops will soon be shipping with 3D webcams. The official SDK from intel o
 This is a tool to get the data feed, and show video on Linux. 
 
 See blog posts about it. 
-[First investigation](http://solsticlipse.com/2015/01/09/intel-real-sense-camera-on-linux.html)
-[Camera Controls](http://solsticlipse.com/2015/02/10/intel-real-sense-on-linux-part-2-3d-camera-controls.html)
-[3d model export](http://solsticlipse.com/2015/03/31/intel-real-sense-3d-on-linux-macos.html)
+[First investigation](http://solsticlipse.com/2015/01/09/intel-real-sense-camera-on-linux.html)  
+[Camera Controls](http://solsticlipse.com/2015/02/10/intel-real-sense-on-linux-part-2-3d-camera-controls.html)  
+[3d model export](http://solsticlipse.com/2015/03/31/intel-real-sense-3d-on-linux-macos.html)  
 
 This branch currently requires a linux kernel patch to work.
 Available as another branch on the same repo.
