@@ -55,6 +55,13 @@ MainWindow::MainWindow(QWidget *parent)
     fifoRemoteLayout->addWidget(fifoRemoteFilenameLabel);
     fifoRemoteLayout->addWidget(fifoRemoteFilenameEdit);
 
+    fifoSnapKeyLayout = new QHBoxLayout();
+    fifoSnapKeyLabel = new QLabel("Snap trigger character");
+    fifoSnapKeyEdit = new QLineEdit();
+    fifoSnapKeyEdit->setMaxLength(1);
+    fifoSnapKeyLayout->addWidget(fifoSnapKeyLabel);
+    fifoSnapKeyLayout->addWidget(fifoSnapKeyEdit);
+
     fifoProjOnKeyLayout = new QHBoxLayout();
     fifoProjOnKeyLabel = new QLabel("Projector On trigger character");
     fifoProjOnKeyEdit = new QLineEdit();
@@ -119,6 +126,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addLayout(byteLayout);*/
     mainLayout->addLayout(snapshotLayout);
     mainLayout->addLayout(fifoRemoteLayout);
+    mainLayout->addLayout(fifoSnapKeyLayout);
     mainLayout->addLayout(fifoProjOnKeyLayout);
     mainLayout->addLayout(fifoProjOffKeyLayout);
 
@@ -162,6 +170,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(snapshotDirEdit,SIGNAL(textChanged(QString)),depthCamera,SLOT(setSnapshotDir(QString)));
     connect(fifoRemoteFilenameEdit,SIGNAL(textChanged(QString)),
             this,SLOT(setFifoFilename(QString)));
+    connect(fifoSnapKeyEdit,SIGNAL(textChanged(QString)),
+            this,SLOT(setFifoSnapKey(QString)));
     connect(fifoProjOnKeyEdit,SIGNAL(textChanged(QString)),
             this,SLOT(setFifoProjOnKey(QString)));
     connect(fifoProjOffKeyEdit,SIGNAL(textChanged(QString)),
@@ -180,6 +190,9 @@ MainWindow::MainWindow(QWidget *parent)
     if(settings->contains("fifoRemoteFilename")){
         fifoRemoteFilenameEdit->setText(settings->value("fifoRemoteFilename").toString());
     }
+    if(settings->contains("fifoSnapshotKey")){
+        fifoSnapKeyEdit->setText(settings->value("fifoSnapshotKey").toString());
+    } else { fifoSnapKeyEdit->setText("s"); }
     if(settings->contains("fifoProjectorOnKey")){
         fifoProjOnKeyEdit->setText(settings->value("fifoProjectorOnKey").toString());
     } else { fifoProjOnKeyEdit->setText("L"); }
@@ -196,6 +209,7 @@ MainWindow::~MainWindow()
     settings->setValue("depthCameraDevice",depthDevicePathEdit->text());
     settings->setValue("snapshotDirectory",snapshotDirEdit->text());
     settings->setValue("fifoRemoteFilename",fifoRemoteFilenameEdit->text());
+    settings->setValue("fifoSnapshotKey",fifoSnapKeyEdit->text());
     settings->setValue("fifoProjectorOnKey",fifoProjOnKeyEdit->text());
     settings->setValue("fifoProjectorOffKey",fifoProjOffKeyEdit->text());
     delete settings;
@@ -203,6 +217,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::setFifoFilename(QString filename){
     fifo_filename = filename;
+}
+
+void MainWindow::setFifoSnapKey(QString character){
+    fifoSnapKey = character.toStdString().c_str()[0];
 }
 
 void MainWindow::setFifoProjOnKey(QString character){
@@ -248,7 +266,7 @@ void MainWindow::checkFifo(){
             emit setLaserPower(16);
         } else if(command == fifoProjOffKey){
             emit setLaserPower(0);
-        } else {
+        } else if(command == fifoSnapKey){
             out << "takeSnap" << endl;
             emit takeSnap();
         }

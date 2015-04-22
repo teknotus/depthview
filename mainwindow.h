@@ -53,6 +53,10 @@ public:
     QLabel *fifoRemoteFilenameLabel;
     QLineEdit *fifoRemoteFilenameEdit;
 
+    QHBoxLayout *fifoSnapKeyLayout;
+    QLabel *fifoSnapKeyLabel;
+    QLineEdit *fifoSnapKeyEdit;
+
     QHBoxLayout *fifoProjOnKeyLayout;
     QLabel *fifoProjOnKeyLabel;
     QLineEdit *fifoProjOnKeyEdit;
@@ -84,7 +88,7 @@ public:
     QTimer *timer;
     QString fifo_filename;
     int fifo_fd;
-    char fifoProjOnKey, fifoProjOffKey;
+    char fifoProjOnKey, fifoProjOffKey, fifoSnapKey;
 
 signals:
     void takeSnap();
@@ -92,6 +96,7 @@ signals:
 
 public slots:
     void setFifoFilename(QString);
+    void setFifoSnapKey(QString);
     void setFifoProjOnKey(QString);
     void setFifoProjOffKey(QString);
     void openFifo();
