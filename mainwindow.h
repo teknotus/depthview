@@ -53,6 +53,14 @@ public:
     QLabel *fifoRemoteFilenameLabel;
     QLineEdit *fifoRemoteFilenameEdit;
 
+    QHBoxLayout *fifoProjOnKeyLayout;
+    QLabel *fifoProjOnKeyLabel;
+    QLineEdit *fifoProjOnKeyEdit;
+
+    QHBoxLayout *fifoProjOffKeyLayout;
+    QLabel *fifoProjOffKeyLabel;
+    QLineEdit *fifoProjOffKeyEdit;
+
     QHBoxLayout * maxLayout;
     QLabel * maxLabel;
     QSlider * maxSetting;
@@ -76,12 +84,16 @@ public:
     QTimer *timer;
     QString fifo_filename;
     int fifo_fd;
+    char fifoProjOnKey, fifoProjOffKey;
 
 signals:
     void takeSnap();
+    void setLaserPower(int);
 
 public slots:
     void setFifoFilename(QString);
+    void setFifoProjOnKey(QString);
+    void setFifoProjOffKey(QString);
     void openFifo();
     void closeFifo();
     void checkFifo();

@@ -55,6 +55,22 @@ MainWindow::MainWindow(QWidget *parent)
     fifoRemoteLayout->addWidget(fifoRemoteFilenameLabel);
     fifoRemoteLayout->addWidget(fifoRemoteFilenameEdit);
 
+    fifoProjOnKeyLayout = new QHBoxLayout();
+    fifoProjOnKeyLabel = new QLabel("Projector On trigger character");
+    fifoProjOnKeyEdit = new QLineEdit();
+    fifoProjOnKeyEdit->setMaxLength(1);
+    fifoProjOnKeyLabel->setBuddy(fifoProjOnKeyEdit);
+    fifoProjOnKeyLayout->addWidget(fifoProjOnKeyLabel);
+    fifoProjOnKeyLayout->addWidget(fifoProjOnKeyEdit);
+
+    fifoProjOffKeyLayout = new QHBoxLayout();
+    fifoProjOffKeyLabel = new QLabel("Projector Off trigger character");
+    fifoProjOffKeyEdit = new QLineEdit();
+    fifoProjOffKeyEdit->setMaxLength(1);
+    fifoProjOffKeyLabel->setBuddy(fifoProjOffKeyEdit);
+    fifoProjOffKeyLayout->addWidget(fifoProjOffKeyLabel);
+    fifoProjOffKeyLayout->addWidget(fifoProjOffKeyEdit);
+
     buttonLayout = new QHBoxLayout();
     startButton = new QPushButton("start");
     stopButton = new QPushButton("stop");
@@ -103,6 +119,8 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addLayout(byteLayout);*/
     mainLayout->addLayout(snapshotLayout);
     mainLayout->addLayout(fifoRemoteLayout);
+    mainLayout->addLayout(fifoProjOnKeyLayout);
+    mainLayout->addLayout(fifoProjOffKeyLayout);
 
     mainLayout->addLayout((devicePickLayout));
     mainLayout->addLayout(buttonLayout);
@@ -138,11 +156,16 @@ MainWindow::MainWindow(QWidget *parent)
     connect(snapshotButton,SIGNAL(clicked()),depthCamera,SLOT(savePicture()));
     connect(this,SIGNAL(takeSnap()),colorCamera,SLOT(savePicture()));
     connect(this,SIGNAL(takeSnap()),depthCamera,SLOT(savePicture()));
+    connect(this,SIGNAL(setLaserPower(int)),depthCamera,SLOT(setLaserPower(int)));
 
     connect(snapshotDirEdit,SIGNAL(textChanged(QString)),colorCamera,SLOT(setSnapshotDir(QString)));
     connect(snapshotDirEdit,SIGNAL(textChanged(QString)),depthCamera,SLOT(setSnapshotDir(QString)));
     connect(fifoRemoteFilenameEdit,SIGNAL(textChanged(QString)),
             this,SLOT(setFifoFilename(QString)));
+    connect(fifoProjOnKeyEdit,SIGNAL(textChanged(QString)),
+            this,SLOT(setFifoProjOnKey(QString)));
+    connect(fifoProjOffKeyEdit,SIGNAL(textChanged(QString)),
+            this,SLOT(setFifoProjOffKey(QString)));
 
     settings = new QSettings("solsticlipse", "depthview");
     if(settings->contains("colorCameraDevice")){
@@ -157,6 +180,12 @@ MainWindow::MainWindow(QWidget *parent)
     if(settings->contains("fifoRemoteFilename")){
         fifoRemoteFilenameEdit->setText(settings->value("fifoRemoteFilename").toString());
     }
+    if(settings->contains("fifoProjectorOnKey")){
+        fifoProjOnKeyEdit->setText(settings->value("fifoProjectorOnKey").toString());
+    } else { fifoProjOnKeyEdit->setText("L"); }
+    if(settings->contains("fifoProjectorOffKey")){
+        fifoProjOffKeyEdit->setText(settings->value("fifoProjectorOffKey").toString());
+    } else { fifoProjOffKeyEdit->setText("l"); }
     connect(timer, SIGNAL(timeout()), this, SLOT(checkFifo()));
 }
 
@@ -167,11 +196,21 @@ MainWindow::~MainWindow()
     settings->setValue("depthCameraDevice",depthDevicePathEdit->text());
     settings->setValue("snapshotDirectory",snapshotDirEdit->text());
     settings->setValue("fifoRemoteFilename",fifoRemoteFilenameEdit->text());
+    settings->setValue("fifoProjectorOnKey",fifoProjOnKeyEdit->text());
+    settings->setValue("fifoProjectorOffKey",fifoProjOffKeyEdit->text());
     delete settings;
 }
 
 void MainWindow::setFifoFilename(QString filename){
     fifo_filename = filename;
+}
+
+void MainWindow::setFifoProjOnKey(QString character){
+    fifoProjOnKey = character.toStdString().c_str()[0];
+}
+
+void MainWindow::setFifoProjOffKey(QString character){
+    fifoProjOffKey = character.toStdString().c_str()[0];
 }
 
 void MainWindow::openFifo(){
@@ -203,7 +242,15 @@ void MainWindow::checkFifo(){
             /* no fifo */
         }
     } else {
-        out << "takeSnap" << endl;
-        emit takeSnap();
+        if(command == fifoProjOnKey){
+            emit setLaserPower(16);
+        } else if(command == fifoProjOffKey){
+            emit setLaserPower(0);
+        } else {
+            out << "takeSnap" << endl;
+            emit takeSnap();
+        }
+
+
     }
 }
