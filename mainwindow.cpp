@@ -242,7 +242,9 @@ void MainWindow::checkFifo(){
             /* no fifo */
         }
     } else {
-        if(command == fifoProjOnKey){
+        if(command == '\n'){
+            return;
+        } else if(command == fifoProjOnKey){
             emit setLaserPower(16);
         } else if(command == fifoProjOffKey){
             emit setLaserPower(0);
@@ -250,7 +252,5 @@ void MainWindow::checkFifo(){
             out << "takeSnap" << endl;
             emit takeSnap();
         }
-
-
     }
 }
