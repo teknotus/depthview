@@ -1,0 +1,2 @@
+SUBSYSTEM=="video4linux", ATTRS{idVendor}=="8086", ATTRS{idProduct}=="0a66",RUN+="/usr/local/bin/realsense-map-controls '%E{DEVNAME}'"
+
