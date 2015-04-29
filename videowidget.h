@@ -7,12 +7,16 @@
 #include <string>
 #include <QImage>
 #include <QPaintEvent>
+#include <opencv2/core/core.hpp>
 //#include <QRect>
+
+using namespace cv;
 
 class VideoWidget : public QWidget
 {
     Q_OBJECT
     QImage image;
+    Mat image_cv;
 
 public:
     explicit VideoWidget(QWidget *parent = 0);
