@@ -170,9 +170,39 @@ bool CameraDataFeed::getControls(){
 
 //UVC_GET_CUR
     struct v4l2_queryctrl qctrl;
+    int status = 0;
     qctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
     while (0 == ioctl (fd, VIDIOC_QUERYCTRL, &qctrl)) {
-        out << "id: " << qctrl.id << " name: " << (char *)qctrl.name << endl;
+        out << "id: " << qctrl.id << " name: " << (char *)qctrl.name << " type: ";
+        switch(qctrl.type){
+        case V4L2_CTRL_TYPE_INTEGER:
+            out << "integer";
+            break;
+        case V4L2_CTRL_TYPE_BOOLEAN:
+            out << "bool";
+            break;
+        case V4L2_CTRL_TYPE_MENU:
+            out << "menu";
+            break;
+        default:
+            out << "other";
+        }
+        out << endl;
+        if(qctrl.type == V4L2_CTRL_TYPE_MENU){
+            struct v4l2_querymenu qmenu;
+            for(int i = qctrl.minimum ; i <= qctrl.maximum ; i++){
+                memset(&qmenu,0,sizeof(qmenu));
+                qmenu.id = qctrl.id;
+                qmenu.index = i;
+                status = ioctl(fd,VIDIOC_QUERYMENU,&qmenu);
+                if(status == -1){
+                    perror("VIDIOC_QUERYMENU");
+                } else if(status == 0){
+                    out << "\t" << i << ": " << (char *)qmenu.name << endl;
+                }
+            }
+        }
+
         qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
     }
 
