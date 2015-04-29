@@ -604,7 +604,7 @@ void CameraDataFeed::createImages(void * voidData){
     png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
     png_settings.push_back(0);
 
-    Mat color_cv(height,width,CV_8UC2);
+    Mat color_cv; //(height,width,CV_8UC2);
     Mat color_cv_rgb;
     Mat depth_cv(height,width, CV_16U);
     Mat ir_cv(height,width, CV_8U);
@@ -614,20 +614,21 @@ void CameraDataFeed::createImages(void * voidData){
 
     switch(pixelFormat){
     case YUYV:
-        for(int j = 0 ; j < height ; j++){
-            int step16 = width*2*j;
-            for(int i = 0 ; i < width ; i++){
-                int pixel16 = step16 + 2*i;
+//        for(int j = 0 ; j < height ; j++){
+//            int step16 = width*2*j;
+//            for(int i = 0 ; i < width ; i++){
+//                int pixel16 = step16 + 2*i;
 
-                u_int16_t color_yuyv = *(u_int16_t *)(data + pixel16);
-                u_int8_t high = (color_yuyv >> 8) & 0xff;
-                u_int8_t low = color_yuyv & 0xff;
-                Vec2b colorpix_cv;
-                colorpix_cv[1] = high;
-                colorpix_cv[0] = low;
-                color_cv.at<cv::Vec2b>(j,i) = colorpix_cv;
-            }
-        }
+//                u_int16_t color_yuyv = *(u_int16_t *)(data + pixel16);
+//                u_int8_t high = (color_yuyv >> 8) & 0xff;
+//                u_int8_t low = color_yuyv & 0xff;
+//                Vec2b colorpix_cv;
+//                colorpix_cv[1] = high;
+//                colorpix_cv[0] = low;
+//                color_cv.at<cv::Vec2b>(j,i) = colorpix_cv;
+//            }
+//        }
+        color_cv = Mat(height,width, CV_8UC2, data);
         cvtColor(color_cv,color_cv_rgb,CV_YUV2RGB_YUYV);
         colorImage = QImage(color_cv_rgb.data,color_cv_rgb.cols,color_cv_rgb.rows,
                             color_cv_rgb.step,QImage::Format_RGB888).copy();
