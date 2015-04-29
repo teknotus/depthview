@@ -21,10 +21,15 @@ SOURCES += main.cpp\
     videowidget.cpp \
     cameradatafeed.cpp \
     cameracontrol.cpp \
-    controlswidget.cpp
+    controlswidget.cpp \
+    cameracontrolwidget.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
     cameradatafeed.h \
     cameracontrol.h \
-    controlswidget.h
+    controlswidget.h \
+    cameracontrolwidget.h
+
+FORMS += \
+    cameracontrolwidget.ui
