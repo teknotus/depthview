@@ -17,10 +17,16 @@
 #include <QImage>
 #include <QDateTime>
 #include <opencv2/opencv.hpp>
+#include <QList>
 //using std::string;
 
 using namespace std;
 using namespace cv;
+
+struct control {
+    struct v4l2_queryctrl qctrl;
+    QList<struct v4l2_querymenu> qmenu;
+};
 
 class CameraDataFeed : public QObject
 {
@@ -43,6 +49,8 @@ class CameraDataFeed : public QObject
     v4l2_buffer * buffers;
     struct v4l2_requestbuffers reqestBuffers;
     QTimer *timer;
+//    QList<struct v4l2_queryctrl> * depthControlList;
+    QList<struct control> * depthControlList;
     void printState();
     bool openCamera();
     void openFifo();
@@ -91,13 +99,16 @@ class CameraDataFeed : public QObject
 
 public:
     explicit CameraDataFeed(QObject *parent = 0);
-    void setControl(int control, int value);
+    void setControlUVC(int control, int value);
+    __s32 getControl(__u32);
 
 signals:
 //    void newData(void *);
     void newColorImage(QImage);
     void newDepthImage(QImage);
     void newInfraredImage(QImage);
+//    void newControls(QList<struct v4l2_queryctrl>);
+    void newControls(QList<struct control>);
 
 public slots:
     void updateData();

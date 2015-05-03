@@ -6,13 +6,21 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
+#include <QListIterator>
+#include <QTextStream>
+#include <linux/videodev2.h>
 #include <cameradatafeed.h>
+#include <cameracontrolwidget.h>
 
 class ControlsWidget : public QWidget
 {
     Q_OBJECT
     CameraDataFeed *camera;
     QVBoxLayout *controlsLayout;
+
+    QVBoxLayout * depthControlsLayout;
+    QList<CameraControlWidget *> depthControls;
+    QTextStream out;
 
     QHBoxLayout * laserLayout;
     QLabel * laserLabel;
@@ -46,6 +54,8 @@ signals:
 
 public slots:
     void setCamera(CameraDataFeed *);
+//    void setDepthControls(QList<struct v4l2_queryctrl>);
+    void setDepthControls(QList<struct control>);
     void setDefaults();
     void setAccuracy();
     void setInfo();

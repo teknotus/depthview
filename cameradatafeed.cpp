@@ -7,6 +7,8 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
     fd = -1;
 //    fifo_filename = QString("/tmp/depthview/fifo");
     takeSnap = false;
+//    depthControlList = new QList<struct v4l2_queryctrl>();
+    depthControlList = new QList<struct control>();
     memset(&v4l2Format,0,sizeof(v4l2_format));
     depthMin = 0;
     depthMax = 0xffff;
@@ -17,6 +19,7 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
 }
 CameraDataFeed::~CameraDataFeed(){
     delete timer;
+    delete depthControlList;
 }
 void CameraDataFeed::printState(){
     // I should use array lookup here I know.
@@ -169,10 +172,14 @@ bool CameraDataFeed::getControls(){
     cout << "Current data0:" << data[0] << " data1:" << data[1] << endl;
 
 //UVC_GET_CUR
+    struct control ctrl;
     struct v4l2_queryctrl qctrl;
+//    &qctrl = &ctrl.qctrl;
     int status = 0;
+    depthControlList->clear();
     qctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
     while (0 == ioctl (fd, VIDIOC_QUERYCTRL, &qctrl)) {
+        ctrl.qctrl = qctrl;
         out << "id: " << qctrl.id << " name: " << (char *)qctrl.name << " type: ";
         switch(qctrl.type){
         case V4L2_CTRL_TYPE_INTEGER:
@@ -189,8 +196,10 @@ bool CameraDataFeed::getControls(){
         }
         out << endl;
         if(qctrl.type == V4L2_CTRL_TYPE_MENU){
+            ctrl.qmenu.clear();
             struct v4l2_querymenu qmenu;
             for(int i = qctrl.minimum ; i <= qctrl.maximum ; i++){
+                out << "qmenu size: " << ctrl.qmenu.size() << endl;
                 memset(&qmenu,0,sizeof(qmenu));
                 qmenu.id = qctrl.id;
                 qmenu.index = i;
@@ -198,13 +207,16 @@ bool CameraDataFeed::getControls(){
                 if(status == -1){
                     perror("VIDIOC_QUERYMENU");
                 } else if(status == 0){
-                    out << "\t" << i << ": " << (char *)qmenu.name << endl;
+                    out << "\t" << i << ": " << (char *)qmenu.name << " value: " << hex << qmenu.value << endl;
+                    ctrl.qmenu << qmenu;
                 }
             }
         }
-
+        depthControlList->append(ctrl);
         qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
     }
+
+    emit newControls(*depthControlList);
 
 //    struct v4l2_query_ext_ctrl qext;
 //    qext.id = V4L2_CTRL_FLAG_NEXT_CTRL;
@@ -214,8 +226,17 @@ bool CameraDataFeed::getControls(){
 //    }
     return true;
 }
-
-void CameraDataFeed::setControl(int control,int setting){
+__s32 CameraDataFeed::getControl(__u32 id){
+    struct v4l2_control control;
+    memset(&control, 0, sizeof(control));
+    control.id = id;
+    if (0 == ioctl(fd, VIDIOC_G_CTRL, &control)) {
+        return control.value;
+    } else {
+        return -1;
+    }
+}
+void CameraDataFeed::setControlUVC(int control,int setting){
     __u8 selector = (__u8)control;
 //    __u8 selector = 1;
     __u8 unit = 5;
@@ -235,19 +256,19 @@ void CameraDataFeed::setControl(int control,int setting){
     }
 }
 void CameraDataFeed::setLaserPower(int value){
-    setControl(1,value);
+    setControlUVC(1,value);
 }
 void CameraDataFeed::setIvcamSetting(int value){
-    setControl(2,value);
+    setControlUVC(2,value);
 }
 void CameraDataFeed::setMrtoSetting(int value){
-    setControl(3,value);
+    setControlUVC(3,value);
 }
 void CameraDataFeed::setFilterSetting(int value){
-    setControl(5,value);
+    setControlUVC(5,value);
 }
 void CameraDataFeed::setConfidenceSetting(int value){
-    setControl(6,value);
+    setControlUVC(6,value);
 }
 
 bool CameraDataFeed::setFormat(){

@@ -1,9 +1,12 @@
 #include "controlswidget.h"
 
 ControlsWidget::ControlsWidget(QWidget *parent) :
-    QWidget(parent)
+    QWidget(parent),out(stdout)
 {
     controlsLayout = new QVBoxLayout();
+
+    depthControlsLayout = new QVBoxLayout();
+    controlsLayout->addLayout(depthControlsLayout);
 
     laserLayout = new QHBoxLayout();
     laserLabel = new QLabel("Laser Power");
@@ -89,11 +92,35 @@ ControlsWidget::ControlsWidget(QWidget *parent) :
 
 void ControlsWidget::setCamera(CameraDataFeed * camera){
     this->camera = camera;
+//    connect(camera,SIGNAL(newControls(QList<struct v4l2_queryctrl>)),this,SLOT(setDepthControls(QList<struct v4l2_queryctrl>)));
+    connect(camera,SIGNAL(newControls(QList<struct control>)),this,SLOT(setDepthControls(QList<struct control>)));
     connect(laserPower,SIGNAL(valueChanged(int)),camera,SLOT(setLaserPower(int)));
     connect(ivcamSetting,SIGNAL(valueChanged(int)),camera,SLOT(setIvcamSetting(int)));
     connect(mrtoSetting,SIGNAL(valueChanged(int)),camera,SLOT(setMrtoSetting(int)));
     connect(filterSetting,SIGNAL(valueChanged(int)),camera,SLOT(setFilterSetting(int)));
     connect(confidenceSetting,SIGNAL(valueChanged(int)),camera,SLOT(setConfidenceSetting(int)));
+}
+
+//void ControlsWidget::setDepthControls(QList<struct v4l2_queryctrl> controls){
+void ControlsWidget::setDepthControls(QList<struct control> controls){
+    out << "setDepthControls" << endl;
+    CameraControlWidget * widge;
+
+    QListIterator<CameraControlWidget *> d(depthControls);
+    while(d.hasNext()){
+        widge = d.next();
+        depthControlsLayout->removeWidget(widge);
+        delete widge;
+    }
+    QListIterator<struct control> i(controls);
+    while(i.hasNext()){
+        widge = new CameraControlWidget();
+        widge->setCamera(camera);
+        depthControlsLayout->addWidget(widge);
+        depthControls << widge;
+        widge->setControl(i.next());
+    }
+
 }
 
 void ControlsWidget::setDefaults(){
