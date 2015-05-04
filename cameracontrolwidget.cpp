@@ -7,12 +7,6 @@ CameraControlWidget::CameraControlWidget(QWidget *parent) :
     out(stdout)
 {
     ui->setupUi(this);
-    connect(ui->horizontalSlider,SIGNAL(valueChanged(int)),this,SLOT(slideChanged(int)));
-    connect(this,SIGNAL(spinUpdate(int)),ui->spinBox,SLOT(setValue(int)));
-    connect(ui->spinBox,SIGNAL(valueChanged(int)),this,SLOT(spinChanged(int)));
-    connect(this,SIGNAL(slideUpdate(int)),ui->horizontalSlider,SLOT(setValue(int)));
-    connect(ui->checkBox,SIGNAL(stateChanged(int)),this,SLOT(checkBoxChanged(int)));
-    connect(ui->comboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(menuChanged(int)));
 }
 
 CameraControlWidget::~CameraControlWidget()
@@ -39,7 +33,12 @@ void CameraControlWidget::setControl(struct control c){
         ui->horizontalSlider->setRange(qc.minimum/qc.step,qc.maximum/qc.step);
         ui->spinBox->setRange(qc.minimum,qc.maximum);
         ui->spinBox->setSingleStep(qc.step);
-        ui->horizontalSlider->setValue(value);
+        ui->horizontalSlider->setValue(value/qc.step);
+        ui->spinBox->setValue(value);
+        connect(ui->horizontalSlider,SIGNAL(valueChanged(int)),this,SLOT(slideChanged(int)));
+        connect(this,SIGNAL(spinUpdate(int)),ui->spinBox,SLOT(setValue(int)));
+        connect(ui->spinBox,SIGNAL(valueChanged(int)),this,SLOT(spinChanged(int)));
+        connect(this,SIGNAL(slideUpdate(int)),ui->horizontalSlider,SLOT(setValue(int)));
     } else if(qc.type == V4L2_CTRL_TYPE_BOOLEAN){
         ui->stackedWidget->setCurrentWidget(ui->boolPage);
         if(value){
@@ -49,6 +48,7 @@ void CameraControlWidget::setControl(struct control c){
             ui->checkBox->setChecked(false);
             ui->checkBox->setText("Disabled");
         }
+        connect(ui->checkBox,SIGNAL(stateChanged(int)),this,SLOT(checkBoxChanged(int)));
     } else if(qc.type == V4L2_CTRL_TYPE_MENU){
         ui->stackedWidget->setCurrentWidget(ui->menuPage);
         out << "menusize: " << c.qmenu.size() << endl;
@@ -57,13 +57,12 @@ void CameraControlWidget::setControl(struct control c){
             struct v4l2_querymenu qm = qmi.next();
             out << "menu item: " << (char *)qm.name << " id: " << qm.id << " index: " << qm.index << endl;
             QVariant menuValue((int)qm.index);
-//            menuValue.Int = qm.index;
             ui->comboBox->addItem((char *)qm.name,menuValue);
         }
         int comboIdx = ui->comboBox->findData(value);
         out << "comboIdx: " << comboIdx << endl;
         ui->comboBox->setCurrentIndex(comboIdx);
-//        ui->comboBox->setModelColumn(1);
+        connect(ui->comboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(menuChanged(int)));
     }
 }
 
@@ -99,6 +98,7 @@ void CameraControlWidget::menuChanged(int index){
 
 void CameraControlWidget::setDefault(){
     camera->setControl(qctrl.id,qctrl.default_value);
+    refresh();
 }
 
 void CameraControlWidget::refresh(){
