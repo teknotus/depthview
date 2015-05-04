@@ -8,7 +8,7 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
 //    fifo_filename = QString("/tmp/depthview/fifo");
     takeSnap = false;
 //    depthControlList = new QList<struct v4l2_queryctrl>();
-    depthControlList = new QList<struct control>();
+    controlList = new QList<struct control>();
     memset(&v4l2Format,0,sizeof(v4l2_format));
     depthMin = 0;
     depthMax = 0xffff;
@@ -19,7 +19,7 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
 }
 CameraDataFeed::~CameraDataFeed(){
     delete timer;
-    delete depthControlList;
+    delete controlList;
 }
 void CameraDataFeed::printState(){
     // I should use array lookup here I know.
@@ -176,7 +176,7 @@ bool CameraDataFeed::getControls(){
     struct v4l2_queryctrl qctrl;
 //    &qctrl = &ctrl.qctrl;
     int status = 0;
-    depthControlList->clear();
+    controlList->clear();
     qctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
     while (0 == ioctl (fd, VIDIOC_QUERYCTRL, &qctrl)) {
         ctrl.qctrl = qctrl;
@@ -212,11 +212,11 @@ bool CameraDataFeed::getControls(){
                 }
             }
         }
-        depthControlList->append(ctrl);
+        controlList->append(ctrl);
         qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
     }
 
-    emit newControls(*depthControlList);
+    emit newControls(*controlList);
 
 //    struct v4l2_query_ext_ctrl qext;
 //    qext.id = V4L2_CTRL_FLAG_NEXT_CTRL;
@@ -234,6 +234,16 @@ __s32 CameraDataFeed::getControl(__u32 id){
         return control.value;
     } else {
         return -1;
+    }
+}
+void CameraDataFeed::setControl(__u32 id,__s32 value){
+    struct v4l2_control control;
+    memset(&control, 0, sizeof(control));
+    control.id = id;
+    control.value = value;
+    if (0 == ioctl(fd, VIDIOC_S_CTRL, &control)) {
+    } else {
+        perror("Set Control");
     }
 }
 void CameraDataFeed::setControlUVC(int control,int setting){

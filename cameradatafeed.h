@@ -23,6 +23,7 @@
 using namespace std;
 using namespace cv;
 
+// TODO check for memory leak with qmenu when clearing control struct
 struct control {
     struct v4l2_queryctrl qctrl;
     QList<struct v4l2_querymenu> qmenu;
@@ -50,7 +51,7 @@ class CameraDataFeed : public QObject
     struct v4l2_requestbuffers reqestBuffers;
     QTimer *timer;
 //    QList<struct v4l2_queryctrl> * depthControlList;
-    QList<struct control> * depthControlList;
+    QList<struct control> * controlList;
     void printState();
     bool openCamera();
     void openFifo();
@@ -101,6 +102,7 @@ public:
     explicit CameraDataFeed(QObject *parent = 0);
     void setControlUVC(int control, int value);
     __s32 getControl(__u32);
+    void setControl(__u32,__s32);
 
 signals:
 //    void newData(void *);

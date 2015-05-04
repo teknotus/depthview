@@ -8,6 +8,7 @@
 #include <QSlider>
 #include <QListIterator>
 #include <QTextStream>
+#include <QGroupBox>
 #include <linux/videodev2.h>
 #include <cameradatafeed.h>
 #include <cameracontrolwidget.h>
@@ -15,12 +16,22 @@
 class ControlsWidget : public QWidget
 {
     Q_OBJECT
-    CameraDataFeed *camera;
     QVBoxLayout *controlsLayout;
-
-    QVBoxLayout * depthControlsLayout;
-    QList<CameraControlWidget *> depthControls;
     QTextStream out;
+
+    QGroupBox * colorGroupBox;
+    CameraDataFeed *colorCamera;
+    QList<CameraControlWidget *> colorControlWidgets;
+    QVBoxLayout * colorControlsLayout;
+
+    QGroupBox * depthGroupBox;
+    CameraDataFeed *depthCamera;
+    QList<CameraControlWidget *> depthControlWidgets;
+    QVBoxLayout * depthControlsLayout;
+
+    QHBoxLayout * buttonLayout;
+    QPushButton * defaultsButton;
+    QPushButton * refreshButton;
 
     QHBoxLayout * laserLayout;
     QLabel * laserLabel;
@@ -46,6 +57,7 @@ class ControlsWidget : public QWidget
     QPushButton * defaultButton;
     QPushButton * accuracyButton;
     QPushButton * infoButton;
+    void setControls(CameraDataFeed *,QList<CameraControlWidget *> *,QVBoxLayout *,QList<struct control>);
 
 public:
     explicit ControlsWidget(QWidget *parent = 0);
@@ -53,10 +65,13 @@ public:
 signals:
 
 public slots:
-    void setCamera(CameraDataFeed *);
-//    void setDepthControls(QList<struct v4l2_queryctrl>);
+    void setColorCamera(CameraDataFeed *);
+    void setDepthCamera(CameraDataFeed *);
+    void setColorControls(QList<struct control>);
     void setDepthControls(QList<struct control>);
     void setDefaults();
+    void defaults();
+    void refresh();
     void setAccuracy();
     void setInfo();
 };

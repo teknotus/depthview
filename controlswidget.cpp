@@ -5,8 +5,24 @@ ControlsWidget::ControlsWidget(QWidget *parent) :
 {
     controlsLayout = new QVBoxLayout();
 
+    colorGroupBox = new QGroupBox("Color Camera");
+    colorControlsLayout = new QVBoxLayout();
+    colorGroupBox->setLayout(colorControlsLayout);
+    colorGroupBox->setFlat(false);
+    controlsLayout->addWidget(colorGroupBox);
+
+    depthGroupBox = new QGroupBox("Depth Camera");
     depthControlsLayout = new QVBoxLayout();
-    controlsLayout->addLayout(depthControlsLayout);
+    depthGroupBox->setLayout(depthControlsLayout);
+    depthGroupBox->setFlat(true);
+    controlsLayout->addWidget(depthGroupBox);
+
+    buttonLayout = new QHBoxLayout();
+    defaultsButton = new QPushButton("defaults");
+    refreshButton = new QPushButton("refresh");
+    buttonLayout->addWidget(defaultsButton);
+    buttonLayout->addWidget(refreshButton);
+    controlsLayout->addLayout(buttonLayout);
 
     laserLayout = new QHBoxLayout();
     laserLabel = new QLabel("Laser Power");
@@ -86,14 +102,20 @@ ControlsWidget::ControlsWidget(QWidget *parent) :
     this->setLayout(controlsLayout);
 
     connect(defaultButton,SIGNAL(clicked()),this,SLOT(setDefaults()));
+    connect(defaultsButton,SIGNAL(clicked()),this,SLOT(defaults()));
+    connect(refreshButton,SIGNAL(clicked()),this,SLOT(refresh()));
     connect(accuracyButton,SIGNAL(clicked()),this,SLOT(setAccuracy()));
     connect(infoButton,SIGNAL(clicked()),this,SLOT(setInfo()));
 }
 
-void ControlsWidget::setCamera(CameraDataFeed * camera){
-    this->camera = camera;
-//    connect(camera,SIGNAL(newControls(QList<struct v4l2_queryctrl>)),this,SLOT(setDepthControls(QList<struct v4l2_queryctrl>)));
-    connect(camera,SIGNAL(newControls(QList<struct control>)),this,SLOT(setDepthControls(QList<struct control>)));
+void ControlsWidget::setColorCamera(CameraDataFeed * camera){
+    this->colorCamera = camera;
+    connect(colorCamera,SIGNAL(newControls(QList<struct control>)),this,SLOT(setColorControls(QList<struct control>)));
+}
+
+void ControlsWidget::setDepthCamera(CameraDataFeed * camera){
+    this->depthCamera = camera;
+    connect(depthCamera,SIGNAL(newControls(QList<struct control>)),this,SLOT(setDepthControls(QList<struct control>)));
     connect(laserPower,SIGNAL(valueChanged(int)),camera,SLOT(setLaserPower(int)));
     connect(ivcamSetting,SIGNAL(valueChanged(int)),camera,SLOT(setIvcamSetting(int)));
     connect(mrtoSetting,SIGNAL(valueChanged(int)),camera,SLOT(setMrtoSetting(int)));
@@ -101,26 +123,60 @@ void ControlsWidget::setCamera(CameraDataFeed * camera){
     connect(confidenceSetting,SIGNAL(valueChanged(int)),camera,SLOT(setConfidenceSetting(int)));
 }
 
-//void ControlsWidget::setDepthControls(QList<struct v4l2_queryctrl> controls){
+void ControlsWidget::setColorControls(QList<struct control> controls){
+    out << "setColorControls" << endl;
+    setControls(colorCamera,&colorControlWidgets,colorControlsLayout,controls);
+}
+
 void ControlsWidget::setDepthControls(QList<struct control> controls){
     out << "setDepthControls" << endl;
+    setControls(depthCamera,&depthControlWidgets,depthControlsLayout,controls);
+}
+
+void ControlsWidget::setControls(CameraDataFeed * camera,
+                                 QList<CameraControlWidget *> * widgets,
+                                 QVBoxLayout * layout,
+                                 QList<struct control> controls){
+
+    out << "in controls: " << controls.size() << " existing controls: " << widgets->size() << endl;
     CameraControlWidget * widge;
 
-    QListIterator<CameraControlWidget *> d(depthControls);
+    QListIterator<CameraControlWidget *> d(*widgets);
     while(d.hasNext()){
         widge = d.next();
-        depthControlsLayout->removeWidget(widge);
+        layout->removeWidget(widge);
         delete widge;
     }
     QListIterator<struct control> i(controls);
     while(i.hasNext()){
         widge = new CameraControlWidget();
         widge->setCamera(camera);
-        depthControlsLayout->addWidget(widge);
-        depthControls << widge;
+        layout->addWidget(widge);
+        widgets->append(widge);
         widge->setControl(i.next());
     }
 
+}
+void ControlsWidget::defaults(){
+    QListIterator<CameraControlWidget *> c(colorControlWidgets);
+    while(c.hasNext()){
+        c.next()->setDefault();
+    }
+    QListIterator<CameraControlWidget *> d(depthControlWidgets);
+    while(d.hasNext()){
+        d.next()->setDefault();
+    }
+}
+
+void ControlsWidget::refresh(){
+    QListIterator<CameraControlWidget *> c(colorControlWidgets);
+    while(c.hasNext()){
+        c.next()->refresh();
+    }
+    QListIterator<CameraControlWidget *> d(depthControlWidgets);
+    while(d.hasNext()){
+        d.next()->refresh();
+    }
 }
 
 void ControlsWidget::setDefaults(){

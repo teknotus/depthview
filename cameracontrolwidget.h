@@ -29,9 +29,14 @@ signals:
 public slots:
     void slideChanged(int);
     void spinChanged(int);
+    void checkBoxChanged(int);
+    void menuChanged(int);
+    void setDefault();
+    void refresh();
 
 private:
     Ui::CameraControlWidget *ui;
+    QTextStream out;
     struct v4l2_queryctrl qctrl;
     CameraDataFeed * camera;
 };

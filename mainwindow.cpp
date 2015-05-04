@@ -18,7 +18,8 @@ MainWindow::MainWindow(QWidget *parent)
     depthCamera = new CameraDataFeed();
     depthCamera->setFourcc(0x495a4e49);
     controlsWidget = new ControlsWidget();
-    controlsWidget->setCamera(depthCamera);
+    controlsWidget->setDepthCamera(depthCamera);
+    controlsWidget->setColorCamera(colorCamera);
     controlsWidget->setWindowTitle("Video Controls");
     controlsWidget->show();
 
