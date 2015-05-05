@@ -79,6 +79,30 @@ MainWindow::MainWindow(QWidget *parent)
     fifoProjOffKeyLayout->addWidget(fifoProjOffKeyLabel);
     fifoProjOffKeyLayout->addWidget(fifoProjOffKeyEdit);
 
+    colorSaveFmtLayout = new QHBoxLayout();
+    colorSaveFmtLabel = new QLabel("Color save file format");
+    colorSaveFmtLayout->addWidget(colorSaveFmtLabel);
+    colorSaveFmtGroup = new QButtonGroup();
+    colorPngButton = new QRadioButton(".png");
+    colorPpmButton = new QRadioButton(".ppm");
+    colorSaveFmtGroup->addButton(colorPngButton,0);
+    colorSaveFmtGroup->addButton(colorPpmButton,2);
+    colorPngButton->setChecked(true);
+    colorSaveFmtLayout->addWidget(colorPngButton);
+    colorSaveFmtLayout->addWidget(colorPpmButton);
+
+    depthSaveFmtLayout = new QHBoxLayout();
+    depthSaveFmtLabel = new QLabel("Depth save file format");
+    depthSaveFmtLayout->addWidget(depthSaveFmtLabel);
+    depthSaveFmtGroup = new QButtonGroup();
+    depthPngButton = new QRadioButton(".png");
+    depthPgmButton = new QRadioButton(".pgm");
+    depthSaveFmtGroup->addButton(depthPngButton,0);
+    depthSaveFmtGroup->addButton(depthPgmButton,1);
+    depthPngButton->setChecked(true);
+    depthSaveFmtLayout->addWidget(depthPngButton);
+    depthSaveFmtLayout->addWidget(depthPgmButton);
+
     buttonLayout = new QHBoxLayout();
     startButton = new QPushButton("start");
     stopButton = new QPushButton("stop");
@@ -130,7 +154,8 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addLayout(fifoSnapKeyLayout);
     mainLayout->addLayout(fifoProjOnKeyLayout);
     mainLayout->addLayout(fifoProjOffKeyLayout);
-
+    mainLayout->addLayout(colorSaveFmtLayout);
+    mainLayout->addLayout(depthSaveFmtLayout);
     mainLayout->addLayout((devicePickLayout));
     mainLayout->addLayout(buttonLayout);
     centerWidget = new QWidget();
@@ -177,6 +202,8 @@ MainWindow::MainWindow(QWidget *parent)
             this,SLOT(setFifoProjOnKey(QString)));
     connect(fifoProjOffKeyEdit,SIGNAL(textChanged(QString)),
             this,SLOT(setFifoProjOffKey(QString)));
+    connect(colorSaveFmtGroup,SIGNAL(buttonClicked(int)),colorCamera,SLOT(setFileFormat(int)));
+    connect(depthSaveFmtGroup,SIGNAL(buttonClicked(int)),depthCamera,SLOT(setFileFormat(int)));
 
     settings = new QSettings("solsticlipse", "depthview");
     if(settings->contains("colorCameraDevice")){

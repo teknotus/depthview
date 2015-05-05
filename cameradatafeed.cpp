@@ -10,6 +10,7 @@ CameraDataFeed::CameraDataFeed(QObject *parent) :
 //    depthControlList = new QList<struct v4l2_queryctrl>();
     controlList = new QList<struct control>();
     memset(&v4l2Format,0,sizeof(v4l2_format));
+    fileFormat = 0;
     depthMin = 0;
     depthMax = 0xffff;
     depthMask = 0xffff;
@@ -659,8 +660,15 @@ void CameraDataFeed::createImages(void * voidData){
 
     QDateTime local(QDateTime::currentDateTime());
     int timestamp = (int)local.toUTC().toTime_t();
-    QString common_filename = QString::number(timestamp) + local.toString("zzz")
-            + QString(".png");
+    QString common_filename = QString::number(timestamp) + local.toString("zzz");
+//    out << "createImages File Format: " << fileFormat << endl;
+    if(fileFormat == 0){
+        common_filename += QString(".png");
+    } else if (fileFormat == 1){
+        common_filename += QString(".pgm");
+    } else if (fileFormat == 2){
+        common_filename += QString(".ppm");
+    }
     vector<int> png_settings;
     png_settings.push_back(CV_IMWRITE_PNG_COMPRESSION);
     png_settings.push_back(0);
@@ -794,6 +802,10 @@ void CameraDataFeed::setDepthMask(int byteMask){
 
 void CameraDataFeed::savePicture(){
     takeSnap = true;
+}
+
+void CameraDataFeed::setFileFormat(int fmt){
+    fileFormat = fmt;
 }
 
 void CameraDataFeed::setSnapshotDir(QString dir){

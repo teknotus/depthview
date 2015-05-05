@@ -41,6 +41,7 @@ class CameraDataFeed : public QObject
     QImage depthImage;
     QImage infraredImage;
     bool takeSnap;
+    int fileFormat;
     u_int16_t depthMin;
     u_int16_t depthMax;
     u_int16_t depthMask;
@@ -127,6 +128,7 @@ public slots:
     void setDepthMax(int);
     void setDepthMask(int);
     void savePicture();
+    void setFileFormat(int);
     void setSnapshotDir(QString);
 };
 

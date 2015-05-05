@@ -65,24 +65,36 @@ public:
     QLabel *fifoProjOffKeyLabel;
     QLineEdit *fifoProjOffKeyEdit;
 
-    QHBoxLayout * maxLayout;
-    QLabel * maxLabel;
-    QSlider * maxSetting;
+//    QHBoxLayout * maxLayout;
+//    QLabel * maxLabel;
+//    QSlider * maxSetting;
 
-    QHBoxLayout * minLayout;
-    QLabel * minLabel;
-    QSlider * minSetting;
+//    QHBoxLayout * minLayout;
+//    QLabel * minLabel;
+//    QSlider * minSetting;
 
-    QHBoxLayout * byteLayout;
-    QButtonGroup * byteGroup;
-    QRadioButton * bothButton;
-    QRadioButton * lowButton;
-    QRadioButton * highButton;
+//    QHBoxLayout * byteLayout;
+//    QButtonGroup * byteGroup;
+//    QRadioButton * bothButton;
+//    QRadioButton * lowButton;
+//    QRadioButton * highButton;
 
-    QHBoxLayout * presetLayout;
-    QPushButton * defaultButton;
-    QPushButton * accuracyButton;
-    QPushButton * infoButton;
+    QHBoxLayout * colorSaveFmtLayout;
+    QLabel * colorSaveFmtLabel;
+    QButtonGroup * colorSaveFmtGroup;
+    QRadioButton * colorPngButton;
+    QRadioButton * colorPpmButton;
+
+    QHBoxLayout * depthSaveFmtLayout;
+    QLabel * depthSaveFmtLabel;
+    QButtonGroup * depthSaveFmtGroup;
+    QRadioButton * depthPngButton;
+    QRadioButton * depthPgmButton;
+
+//    QHBoxLayout * presetLayout;
+//    QPushButton * defaultButton;
+//    QPushButton * accuracyButton;
+//    QPushButton * infoButton;
 
     QTextStream out;
     QTimer *timer;
