@@ -733,12 +733,12 @@ void CameraDataFeed::createImages(void * voidData){
                 int pixel24 = step24 + 3*i;
                 u_int16_t depth = *(u_int16_t *)(data + pixel24);
                 u_int8_t ir = data[pixel24 + 2];
-                depth = int(depth/31.25 + 0.5); // convert to mm
+//                depth = int(depth/31.25 + 0.5); // convert to mm
                 u_int8_t high = (depth >> 8) & 0xff;
                 u_int8_t low = depth & 0xff;
                 Vec2b depthpix_cv;
-                depthpix_cv[0] = high;
-                depthpix_cv[1] = low;
+                depthpix_cv[0] = low;
+                depthpix_cv[1] = high;
                 depth_cv.at<cv::Vec2b>(j,i) = depthpix_cv;
                 ir_cv.at<uchar>(j,i) = ir;
             }
