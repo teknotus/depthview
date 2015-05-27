@@ -7,6 +7,12 @@
 /* #include <errno.h> */
 /* #include <unistd.h> */
 
+#define REALSENSE_LASER_CTRL V4L2_CID_PRIVATE_BASE
+#define REALSENSE_PATTERN_CTRL (V4L2_CID_PRIVATE_BASE + 1)
+#define REALSENSE_EXPOSURE_CTRL (V4L2_CID_PRIVATE_BASE + 2)
+#define REALSENSE_FILTER_CTRL (V4L2_CID_PRIVATE_BASE + 3)
+#define REALSENSE_CONFIDENCE_CTRL (V4L2_CID_PRIVATE_BASE + 4)
+
 #define REALSENSE_EXTENSION_GUID { \
       0xa1, 0x51, 0x57, 0xa5, 0xc5, 0xf3, 0x5e, 0x4a, \
       0x8d, 0x5a, 0x68, 0x54, 0xb8, 0xfa, 0x27, 0x16 }
@@ -70,7 +76,7 @@ int main(int argc, char *argv[]){
 
   struct uvc_xu_control_mapping mapping[] = {
     {
-      .id = 0x009A0904,
+      .id = REALSENSE_LASER_CTRL,
       .name = "Laser Power",
       .entity = REALSENSE_EXTENSION_GUID,
       .selector = 1,
@@ -80,7 +86,7 @@ int main(int argc, char *argv[]){
       .data_type = UVC_CTRL_DATA_TYPE_UNSIGNED
     },
     {
-      .id = 0x009A0905,
+      .id = REALSENSE_PATTERN_CTRL,
       .name = "Pattern",
       .entity = REALSENSE_EXTENSION_GUID,
       .selector = 2,
@@ -92,7 +98,7 @@ int main(int argc, char *argv[]){
       .menu_count = 3
     },
     {
-      .id = 0x009A0906,
+      .id = REALSENSE_EXPOSURE_CTRL,
       .name = "Exposure",
       .entity = REALSENSE_EXTENSION_GUID,
       .selector = 3,
@@ -102,7 +108,7 @@ int main(int argc, char *argv[]){
       .data_type = UVC_CTRL_DATA_TYPE_UNSIGNED
     },
     {
-      .id = 0x009A0907,
+      .id = REALSENSE_FILTER_CTRL,
       .name = "Filter",
       .entity = REALSENSE_EXTENSION_GUID,
       .selector = 5,
@@ -114,7 +120,7 @@ int main(int argc, char *argv[]){
       .menu_count = 8
     },
     {
-      .id = 0x009A0908,
+      .id = REALSENSE_CONFIDENCE_CTRL,
       .name = "Confidence Threshold",
       .entity = REALSENSE_EXTENSION_GUID,
       .selector = 6,
