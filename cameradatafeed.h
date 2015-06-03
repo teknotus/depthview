@@ -20,6 +20,12 @@
 #include <QList>
 //using std::string;
 
+#define REALSENSE_LASER_CTRL V4L2_CID_PRIVATE_BASE
+#define REALSENSE_PATTERN_CTRL (V4L2_CID_PRIVATE_BASE + 1)
+#define REALSENSE_EXPOSURE_CTRL (V4L2_CID_PRIVATE_BASE + 2)
+#define REALSENSE_FILTER_CTRL (V4L2_CID_PRIVATE_BASE + 3)
+#define REALSENSE_CONFIDENCE_CTRL (V4L2_CID_PRIVATE_BASE + 4)
+
 using namespace std;
 using namespace cv;
 
@@ -42,9 +48,6 @@ class CameraDataFeed : public QObject
     QImage infraredImage;
     bool takeSnap;
     int fileFormat;
-    u_int16_t depthMin;
-    u_int16_t depthMax;
-    u_int16_t depthMask;
     u_int32_t fourcc;
     struct v4l2_format v4l2Format;
     __u32 buffercount;
@@ -101,7 +104,6 @@ class CameraDataFeed : public QObject
 
 public:
     explicit CameraDataFeed(QObject *parent = 0);
-    void setControlUVC(int control, int value);
     __s32 getControl(__u32);
     void setControl(__u32,__s32);
 
@@ -124,9 +126,6 @@ public slots:
     void setMrtoSetting(int);
     void setFilterSetting(int);
     void setConfidenceSetting(int);
-    void setDepthMin(int);
-    void setDepthMax(int);
-    void setDepthMask(int);
     void savePicture();
     void setFileFormat(int);
     void setSnapshotDir(QString);
